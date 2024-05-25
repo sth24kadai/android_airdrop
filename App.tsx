@@ -1,118 +1,247 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { Component } from 'react'
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+	Platform,
+	StyleSheet,
+	TouchableOpacity,
+	Text,
+	FlatList,
+	RefreshControl,
+	View,
+	TextBase,
+	ScrollView as RNScrollView,
+} from 'react-native'
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import SafeAreaView from 'react-native-safe-area-view';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import { Button, ListItem } from 'react-native-elements'
+import Zeroconf, { Service } from 'react-native-zeroconf'
+import { AnimatedText } from './components/animated_text';
+import { ScrollView } from 'react-native-gesture-handler';
+//@ts-ignore
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const zeroconf = new Zeroconf()
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+interface State {
+	isScanning: boolean
+	selectedService: string | null
+	services: { [key: string]: Service }
+	logs: {
+		emoji: string,
+		message: string
+	}[],
+	showLogs: boolean
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+export default class App extends Component {
+	public state: State = {
+		isScanning: false,
+		selectedService: null,
+		services: {} as { [key: string]: Service },
+		logs: [],
+		showLogs: false
+	}
+	public timeout: NodeJS.Timeout | undefined = void 0
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+	componentDidMount() {
+		this.refreshData()
 
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+		zeroconf.on('start', () => {
+			this.setState({ isScanning: true })
+			this.state.logs.push({
+				emoji: '🔍',
+				message: 'Started scanning and lunching the mDNS service...'
+			})
+
+			zeroconf.publishService('http', 'tcp', 'local', 'airdrop_like_', 80)
+		})
+
+		zeroconf.on('stop', () => {
+			this.setState({ isScanning: false })
+			this.state.logs.push({
+				emoji: '🛑',
+				message: 'Stopped scanning'
+			})
+		})
+
+		zeroconf.on('update', () => {
+			this.state.logs.push({
+				emoji: '🔄',
+				message: 'Updating Data...'
+			})
+		})
+
+		zeroconf.on('resolved', service => {
+			this.state.logs.push({
+				emoji: '🐉',
+				message: `Resolved ${service.name} (${service.host})`
+			})
+			this.state.logs.push({
+				emoji: '🔗',
+				message: JSON.stringify(service)
+			})
+
+			this.setState({
+				services: {
+					...this.state.services,
+					[service.host]: service,
+				},
+			})
+		})
+
+		zeroconf.on('error', err => {
+			this.setState({ isScanning: false })
+			this.state.logs.push({
+				emoji: '🚨',
+				message: `Error: ${err}`
+			})
+		})
+	}
+
+	renderRow = ({ item, index }: { item: string, index: number }) => {
+		const { name, fullName, host, addresses } = this.state.services[item]
+
+		return (
+			<TouchableOpacity
+				onPress={() =>
+					this.setState({
+						selectedService: host,
+					})}
+			>
+				<ListItem.Content>
+					<ListItem.Title>{name}</ListItem.Title>
+					<ListItem.Subtitle>{fullName} / {addresses.join(',')}</ListItem.Subtitle>
+				</ListItem.Content>
+			</TouchableOpacity>
+		)
+	}
+
+	refreshData = () => {
+		const { isScanning } = this.state
+		if (isScanning) {
+			return
+		}
+		this.setState({ services: [] })
+
+		zeroconf.scan('http', 'tcp', 'local.')
+		this.state.logs.push({
+			emoji: '🔍♻️',
+			message: 'ReScanning for services...'
+		})
+
+		clearTimeout(this.timeout)
+		this.timeout = setTimeout(() => {
+			zeroconf.stop()
+		}, 5000)
+	} 
+
+	showlogs = () => {
+		this.setState({ selectedService: null })
+		this.setState({ showLogs: true })
+	}
+
+	render() {
+		const { services, selectedService, isScanning } = this.state
+		console.log(selectedService)
+
+		const service = selectedService ? services[selectedService] : null;
+
+		if (service) {
+			return (
+				<SafeAreaProvider>
+					<SafeAreaView style={styles.container}>
+						<TouchableOpacity onPress={() => this.setState({ selectedService: null })}>
+							<Text style={styles.closeButton}>{'詳細を閉じる'}</Text>
+						</TouchableOpacity>
+						<Text style={styles.state}>{service.host}</Text>
+						<Text style={styles.state}>{service.addresses.join('\n')}</Text>
+						<View style={styles.json}>
+							<Text>{JSON.stringify(service, null, 2)}</Text>
+						</View>
+					</SafeAreaView>
+				</SafeAreaProvider>
+			)
+		}
+
+		if (this.state.showLogs) {
+			return (
+				<SafeAreaProvider>
+					<SafeAreaView style={styles.container}>
+						<TouchableOpacity onPress={() => this.setState({ showLogs: false })}>
+							<Text style={styles.closeButton}>{'ログを閉じる'}</Text>
+						</TouchableOpacity>
+						<RNScrollView style={styles.logs} >
+							{this.state.logs.map((log, index) => (
+								<View style={ styles.flexLog }>
+									<Text key={index} style={styles.logs}>{log.emoji}</Text>
+									<Text key={"k"+index} style={styles.json}>{log.message}</Text>
+								</View>
+							))}
+						</RNScrollView>
+					</SafeAreaView>
+				</SafeAreaProvider>
+			)
+		}
+
+		return (
+			<SafeAreaProvider>
+				<SafeAreaView style={styles.container}>
+					<Text style={styles.state}><AnimatedText text={isScanning ? "🔍" : "🚀"} />{isScanning ? ' お友達を探しています...' : ' 共有するデバイスの選択'}</Text>
+					{
+						isScanning ? (
+							<>
+								<Text style={styles.state}>付近のデバイスを検索中</Text>
+							</>
+						) : (
+							<>
+								<FlatList
+									data={Object.keys(services)}
+									renderItem={this.renderRow}
+									keyExtractor={key => key}
+									refreshControl={
+										<RefreshControl
+											refreshing={isScanning}
+											onRefresh={this.refreshData}
+											tintColor="skyblue"
+										/>
+									}
+								/>
+								<Button title="デバックログを確認する" onPress={this.showlogs} />
+							</>
+						)
+					}
+				</SafeAreaView>
+			</SafeAreaProvider>
+		)
+	}
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
-
-export default App;
+	container: {
+		flex: 1,
+		marginLeft: 10
+	},
+	closeButton: {
+		padding: 20,
+		textAlign: 'center',
+	},
+	json: {
+		padding: 6,
+		fontWeight : "bold",
+		fontSize: 15,
+	},
+	logs: {
+		padding: 3,
+		fontSize: 20,
+		fontWeight: "semibold"
+	},
+	state: {
+		fontSize: 20,
+		textAlign: 'center',
+		margin: 30,
+	},
+	flexLog : {
+		display: 'flex',
+		flexDirection: "row",
+		alignContent : "center"
+	}
+})
