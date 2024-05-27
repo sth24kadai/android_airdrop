@@ -13,10 +13,16 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SafeAreaView from 'react-native-safe-area-view';
 
-import { Button, ListItem } from 'react-native-elements'
+import { Button, Image, ListItem } from 'react-native-elements'
 import Zeroconf, { Service } from 'react-native-zeroconf'
 import { AnimatedText } from './components/animated_text';
 import { ScrollView } from 'react-native-gesture-handler';
+import { BridgeServer } from 'react-native-http-bridge-refurbished';
+import { Ask } from './types/airdrop.ask';
+import { Discover } from './types/airdrop.discover';
+import { Buffer } from 'buffer';
+
+import * as ImagePicker from 'react-native-image-picker';
 //@ts-ignore
 
 const zeroconf = new Zeroconf()
@@ -29,7 +35,9 @@ interface State {
 		emoji: string,
 		message: string
 	}[],
-	showLogs: boolean
+	showLogs: boolean,
+	image : string | null,
+	senderData : Ask | null
 }
 
 export default class App extends Component {
@@ -38,12 +46,59 @@ export default class App extends Component {
 		selectedService: null,
 		services: {} as { [key: string]: Service },
 		logs: [],
-		showLogs: false
+		showLogs: false,
+		image : null,
+		senderData : {} as Ask
 	}
 	public timeout: NodeJS.Timeout | undefined = void 0
 
+	public AIRDROP_HTTP_PORT = 8771
+
+	private __BridgeServer: BridgeServer | null = null
+
+	public httpServer() { 
+		const httpbridge = new BridgeServer("nubejson.local", true)
+		httpbridge.listen( this.AIRDROP_HTTP_PORT );
+
+		this.state.logs.push({
+			emoji: '🔗',
+			message: `Starting HTTP server on port ${this.AIRDROP_HTTP_PORT}`
+		})
+
+		httpbridge.post("/Discover", async (request, response) => {
+			return {
+				"ReceiverMediaCapabilities" : Buffer.from(JSON.stringify({
+					version : 1
+				})),
+				"ReciverComputerName" : "Google Pixel 6a",
+				"ReceiverModelName" : "Pixel 6a",
+			} as Discover
+		})
+
+		httpbridge.post<Ask>("/Ask", async (request, response) => {
+
+			const data = request.data
+			this.state.senderData = data as Ask
+
+			return {
+				"ReceiverComputerName" : "Google Pixel 6a",
+				"ReceiverModelName" : "Pixel 6a"
+			} as Ask
+		})
+
+		return httpbridge;
+	}
+
 	componentDidMount() {
+		this.__BridgeServer = this.httpServer();
 		this.refreshData()
+		zeroconf.publishService(
+			'airdrop', 
+			'tcp', 
+			'local.', 
+			"AirDrop Service",
+			5353
+		)
 
 		zeroconf.on('start', () => {
 			this.setState({ isScanning: true })
@@ -52,7 +107,6 @@ export default class App extends Component {
 				message: 'Started scanning and lunching the mDNS service...'
 			})
 
-			zeroconf.publishService('http', 'tcp', 'local', 'airdrop_like_', 80)
 		})
 
 		zeroconf.on('stop', () => {
@@ -80,6 +134,8 @@ export default class App extends Component {
 				message: JSON.stringify(service)
 			})
 
+			this.resolveService( service );
+
 			this.setState({
 				services: {
 					...this.state.services,
@@ -95,6 +151,17 @@ export default class App extends Component {
 				message: `Error: ${err}`
 			})
 		})
+	}
+
+	componentWillUnmount() {
+
+		this.state.logs.push({
+			emoji: '🛑',
+			message: 'Unmounting the component and stopping the mDNS service...'
+		})
+
+		this.__BridgeServer !== null && this.__BridgeServer.stop()
+		zeroconf.stop();
 	}
 
 	renderRow = ({ item, index }: { item: string, index: number }) => {
@@ -122,7 +189,7 @@ export default class App extends Component {
 		}
 		this.setState({ services: [] })
 
-		zeroconf.scan('http', 'tcp', 'local.')
+		zeroconf.scan('airdrop', 'tcp', 'local.')
 		this.state.logs.push({
 			emoji: '🔍♻️',
 			message: 'ReScanning for services...'
@@ -137,6 +204,106 @@ export default class App extends Component {
 	showlogs = () => {
 		this.setState({ selectedService: null })
 		this.setState({ showLogs: true })
+	}
+
+	imagePicker = () => {
+		const option : ImagePicker.ImageLibraryOptions = {
+			mediaType: 'photo',
+			quality: 1,
+			includeBase64: true
+		}
+
+		ImagePicker.launchImageLibrary( option , ( resposeImage ) => {
+			if( resposeImage.didCancel ) {
+				this.state.logs.push({
+					emoji: '[!]',
+					message: `User cancelled the image picker`
+				})
+			}
+			else if( resposeImage.errorMessage || resposeImage.errorCode ) {
+				this.state.logs.push({
+					emoji: '[!]',
+					message: `Image picker error: ${resposeImage.errorCode || resposeImage.errorMessage}`
+				})
+			}
+			else {
+				if( resposeImage.assets === null || resposeImage.assets?.length === 0 ) return;
+				if( !Array.isArray( resposeImage.assets )) return;
+				if( typeof resposeImage.assets[0].base64 === "undefined" ) return;
+				this.state.logs.push({
+					emoji: '📸',
+					message: `Image selected: ${JSON.stringify(resposeImage.assets[0].originalPath)}`
+				})
+				this.setState({ image: resposeImage.assets[0].uri })
+			}
+		})
+	}
+
+	sendImage = async ( service : Service ) => {
+		if( this.state.senderData === null ) return;
+		if( this.state.image === null ) return;
+
+		//const { senderData } = this.state;
+
+		const imageRes  = await fetch(this.state.image);
+		const imageBlob = await imageRes.blob();
+		const imageBuff = Buffer.from(
+			await imageBlob.arrayBuffer()
+		);
+
+
+		const response = await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/Ask`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/x-cpio",
+				"Transfer-Encoding": "chunked",
+				"Content-Length": "0",
+				"Connection": "close"
+			},
+			body: imageBuff.toString()
+		})
+
+		if( response.ok ) {
+			await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/Upload`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({
+					"image" : this.state.image,
+					"senderData" : this.state.senderData
+				})
+			
+			})
+		} else {
+			this.state.logs.push({
+				emoji: '🚨',
+				message: `This is not a valid AirDrop service: ${service.host}`
+			})
+		}
+	}
+
+	async resolveService( service: Service ) {
+		const respose = await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/Discover`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				}
+			})
+			
+		if( respose.ok ) {
+			const data = await respose.json()
+			this.state.logs.push({
+				emoji: '🔗',
+				message: JSON.stringify(data)
+			})
+		} else {
+			this.state.logs.push({
+				emoji: '🚨',
+				message: `This is not a valid AirDrop service: ${service.host}`
+			})
+		
+		}
 	}
 
 	render() {
@@ -157,6 +324,9 @@ export default class App extends Component {
 						<View style={styles.json}>
 							<Text>{JSON.stringify(service, null, 2)}</Text>
 						</View>
+						<Button title="画像を選択する" onPress={this.imagePicker} />
+						{ this.state.image && <Image source={{ uri: this.state.image }} style={{ width: 200, height: 200 }} /> }
+						{ this.state.image && <Button title="送信する" onPress={() => this.sendImage( service )} /> }
 					</SafeAreaView>
 				</SafeAreaProvider>
 			)
