@@ -13,16 +13,17 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SafeAreaView from 'react-native-safe-area-view';
 
-import { Button, Image, ListItem } from 'react-native-elements'
+import { Button, Icon, Image, ListItem } from 'react-native-elements'
 import Zeroconf, { Service } from 'react-native-zeroconf'
-import { AnimatedText } from './components/animated_text';
-import { ScrollView } from 'react-native-gesture-handler';
 import { BridgeServer } from 'react-native-http-bridge-refurbished';
 import { Ask } from './types/airdrop.ask';
 import { Discover } from './types/airdrop.discover';
 import { Buffer } from 'buffer';
 
 import * as ImagePicker from 'react-native-image-picker';
+import { ActivityIndicator, Text as PaperText, Button as PaperButton } from 'react-native-paper';
+import { ApplicationBar } from './components/application_bar';
+import { AutoHeightImage } from './components/autosizedImage';
 //@ts-ignore
 
 const zeroconf = new Zeroconf()
@@ -36,8 +37,8 @@ interface State {
 		message: string
 	}[],
 	showLogs: boolean,
-	image : string | null,
-	senderData : Ask | null
+	image: string | null,
+	senderData: Ask | null
 }
 
 export default class App extends Component {
@@ -47,8 +48,8 @@ export default class App extends Component {
 		services: {} as { [key: string]: Service },
 		logs: [],
 		showLogs: false,
-		image : null,
-		senderData : {} as Ask
+		image: null,
+		senderData: {} as Ask
 	}
 	public timeout: NodeJS.Timeout | undefined = void 0
 
@@ -56,9 +57,9 @@ export default class App extends Component {
 
 	private __BridgeServer: BridgeServer | null = null
 
-	public httpServer() { 
+	public httpServer() {
 		const httpbridge = new BridgeServer("nubejson.local", true)
-		httpbridge.listen( this.AIRDROP_HTTP_PORT );
+		httpbridge.listen(this.AIRDROP_HTTP_PORT);
 
 		this.state.logs.push({
 			emoji: '🔗',
@@ -67,11 +68,11 @@ export default class App extends Component {
 
 		httpbridge.post("/Discover", async (request, response) => {
 			return {
-				"ReceiverMediaCapabilities" : Buffer.from(JSON.stringify({
-					version : 1
+				"ReceiverMediaCapabilities": Buffer.from(JSON.stringify({
+					version: 1
 				})),
-				"ReciverComputerName" : "Google Pixel 6a",
-				"ReceiverModelName" : "Pixel 6a",
+				"ReciverComputerName": "Google Pixel 6a",
+				"ReceiverModelName": "Pixel 6a",
 			} as Discover
 		})
 
@@ -81,8 +82,8 @@ export default class App extends Component {
 			this.state.senderData = data as Ask
 
 			return {
-				"ReceiverComputerName" : "Google Pixel 6a",
-				"ReceiverModelName" : "Pixel 6a"
+				"ReceiverComputerName": "Google Pixel 6a",
+				"ReceiverModelName": "Pixel 6a"
 			} as Ask
 		})
 
@@ -93,9 +94,9 @@ export default class App extends Component {
 		this.__BridgeServer = this.httpServer();
 		this.refreshData()
 		zeroconf.publishService(
-			'airdrop', 
-			'tcp', 
-			'local.', 
+			'airdrop',
+			'tcp',
+			'local.',
 			"AirDrop Service",
 			5353
 		)
@@ -134,7 +135,7 @@ export default class App extends Component {
 				message: JSON.stringify(service)
 			})
 
-			this.resolveService( service );
+			this.resolveService(service);
 
 			this.setState({
 				services: {
@@ -173,7 +174,9 @@ export default class App extends Component {
 					this.setState({
 						selectedService: host,
 					})}
+				style={styles.textWithIcon}
 			>
+				<Icon name="smartphone" size={35} />
 				<ListItem.Content>
 					<ListItem.Title>{name}</ListItem.Title>
 					<ListItem.Subtitle>{fullName} / {addresses.join(',')}</ListItem.Subtitle>
@@ -199,7 +202,7 @@ export default class App extends Component {
 		this.timeout = setTimeout(() => {
 			zeroconf.stop()
 		}, 5000)
-	} 
+	}
 
 	showlogs = () => {
 		this.setState({ selectedService: null })
@@ -207,29 +210,29 @@ export default class App extends Component {
 	}
 
 	imagePicker = () => {
-		const option : ImagePicker.ImageLibraryOptions = {
+		const option: ImagePicker.ImageLibraryOptions = {
 			mediaType: 'photo',
 			quality: 1,
 			includeBase64: true
 		}
 
-		ImagePicker.launchImageLibrary( option , ( resposeImage ) => {
-			if( resposeImage.didCancel ) {
+		ImagePicker.launchImageLibrary(option, (resposeImage) => {
+			if (resposeImage.didCancel) {
 				this.state.logs.push({
 					emoji: '[!]',
 					message: `User cancelled the image picker`
 				})
 			}
-			else if( resposeImage.errorMessage || resposeImage.errorCode ) {
+			else if (resposeImage.errorMessage || resposeImage.errorCode) {
 				this.state.logs.push({
 					emoji: '[!]',
 					message: `Image picker error: ${resposeImage.errorCode || resposeImage.errorMessage}`
 				})
 			}
 			else {
-				if( resposeImage.assets === null || resposeImage.assets?.length === 0 ) return;
-				if( !Array.isArray( resposeImage.assets )) return;
-				if( typeof resposeImage.assets[0].base64 === "undefined" ) return;
+				if (resposeImage.assets === null || resposeImage.assets?.length === 0) return;
+				if (!Array.isArray(resposeImage.assets)) return;
+				if (typeof resposeImage.assets[0].base64 === "undefined") return;
 				this.state.logs.push({
 					emoji: '📸',
 					message: `Image selected: ${JSON.stringify(resposeImage.assets[0].originalPath)}`
@@ -239,13 +242,13 @@ export default class App extends Component {
 		})
 	}
 
-	sendImage = async ( service : Service ) => {
-		if( this.state.senderData === null ) return;
-		if( this.state.image === null ) return;
+	sendImage = async (service: Service) => {
+		if (this.state.senderData === null) return;
+		if (this.state.image === null) return;
 
 		//const { senderData } = this.state;
 
-		const imageRes  = await fetch(this.state.image);
+		const imageRes = await fetch(this.state.image);
 		const imageBlob = await imageRes.blob();
 		const imageBuff = Buffer.from(
 			await imageBlob.arrayBuffer()
@@ -263,17 +266,17 @@ export default class App extends Component {
 			body: imageBuff.toString()
 		})
 
-		if( response.ok ) {
+		if (response.ok) {
 			await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/Upload`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json"
 				},
 				body: JSON.stringify({
-					"image" : this.state.image,
-					"senderData" : this.state.senderData
+					"image": this.state.image,
+					"senderData": this.state.senderData
 				})
-			
+
 			})
 		} else {
 			this.state.logs.push({
@@ -283,15 +286,15 @@ export default class App extends Component {
 		}
 	}
 
-	async resolveService( service: Service ) {
+	async resolveService(service: Service) {
 		const respose = await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/Discover`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-				}
-			})
-			
-		if( respose.ok ) {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			}
+		})
+
+		if (respose.ok) {
 			const data = await respose.json()
 			this.state.logs.push({
 				emoji: '🔗',
@@ -302,7 +305,7 @@ export default class App extends Component {
 				emoji: '🚨',
 				message: `This is not a valid AirDrop service: ${service.host}`
 			})
-		
+
 		}
 	}
 
@@ -312,21 +315,29 @@ export default class App extends Component {
 
 		const service = selectedService ? services[selectedService] : null;
 
+
 		if (service) {
 			return (
 				<SafeAreaProvider>
 					<SafeAreaView style={styles.container}>
-						<TouchableOpacity onPress={() => this.setState({ selectedService: null })}>
-							<Text style={styles.closeButton}>{'詳細を閉じる'}</Text>
-						</TouchableOpacity>
-						<Text style={styles.state}>{service.host}</Text>
-						<Text style={styles.state}>{service.addresses.join('\n')}</Text>
-						<View style={styles.json}>
-							<Text>{JSON.stringify(service, null, 2)}</Text>
-						</View>
-						<Button title="画像を選択する" onPress={this.imagePicker} />
-						{ this.state.image && <Image source={{ uri: this.state.image }} style={{ width: 200, height: 200 }} /> }
-						{ this.state.image && <Button title="送信する" onPress={() => this.sendImage( service )} /> }
+						<ApplicationBar closeMenuFunction={() => this.setState({ selectedService: null })} customTitle='デバイスの詳細' />
+						<RNScrollView>
+							<View style={styles.udpadding}>
+								<PaperText variant="headlineMedium" >
+									{service.host.replace('-', " ")} ({service.addresses.join(', ')})
+								</PaperText>
+								<PaperText>
+									正常に認識されています。
+								</PaperText>
+							</View>
+							<PaperButton mode="contained-tonal" onPress={this.imagePicker}>
+								画像を選択する
+							</PaperButton>
+							<View style={styles.udpadding}>
+								{this.state.image && <AutoHeightImage source={{ uri: this.state.image }} width={350} />}
+							</View>
+							{this.state.image && <PaperButton mode="contained-tonal" onPress={() => this.sendImage(service)}>送信する</PaperButton>}
+						</RNScrollView>
 					</SafeAreaView>
 				</SafeAreaProvider>
 			)
@@ -336,14 +347,12 @@ export default class App extends Component {
 			return (
 				<SafeAreaProvider>
 					<SafeAreaView style={styles.container}>
-						<TouchableOpacity onPress={() => this.setState({ showLogs: false })}>
-							<Text style={styles.closeButton}>{'ログを閉じる'}</Text>
-						</TouchableOpacity>
+						<ApplicationBar closeMenuFunction={() => this.setState({ showLogs: false })} customTitle='デバックログ' />
 						<RNScrollView style={styles.logs} >
 							{this.state.logs.map((log, index) => (
-								<View style={ styles.flexLog }>
+								<View style={styles.flexLog} key={"v" + index}>
 									<Text key={index} style={styles.logs}>{log.emoji}</Text>
-									<Text key={"k"+index} style={styles.json}>{log.message}</Text>
+									<Text key={"k" + index} style={styles.json}>{log.message}</Text>
 								</View>
 							))}
 						</RNScrollView>
@@ -355,11 +364,14 @@ export default class App extends Component {
 		return (
 			<SafeAreaProvider>
 				<SafeAreaView style={styles.container}>
-					<Text style={styles.state}><AnimatedText text={isScanning ? "🔍" : "🚀"} />{isScanning ? ' お友達を探しています...' : ' 共有するデバイスの選択'}</Text>
+					<ApplicationBar />
 					{
 						isScanning ? (
 							<>
-								<Text style={styles.state}>付近のデバイスを検索中</Text>
+								<View style={styles.textWithIcon}>
+									<ActivityIndicator size="small" />
+									<Text>付近のデバイスを検索中</Text>
+								</View>
 							</>
 						) : (
 							<>
@@ -375,7 +387,9 @@ export default class App extends Component {
 										/>
 									}
 								/>
-								<Button title="デバックログを確認する" onPress={this.showlogs} />
+								<PaperButton icon="archive" mode='contained-tonal' onPress={this.showlogs}>
+									デバックログを確認する
+								</PaperButton>
 							</>
 						)
 					}
@@ -386,9 +400,34 @@ export default class App extends Component {
 }
 
 const styles = StyleSheet.create({
+	udpadding: {
+		paddingTop: 10,
+		paddingBottom: 10
+	},
+	textWithIcon: {
+		display: 'flex',
+		flexDirection: 'row',
+		alignContent: 'center',
+		alignItems: 'center',
+		textAlign: 'center',
+		justifyContent: 'center',
+		gap: 10,
+		fontSize: 30
+	},
+	textWithIconSizeFree: {
+		padding: 10,
+		display: 'flex',
+		flexDirection: 'row',
+		alignContent: 'center',
+		alignItems: 'center',
+		textAlign: 'center',
+		justifyContent: 'center',
+		gap: 10,
+	},
 	container: {
 		flex: 1,
-		marginLeft: 10
+		marginLeft: 10,
+		marginRight: 10,
 	},
 	closeButton: {
 		padding: 20,
@@ -396,7 +435,7 @@ const styles = StyleSheet.create({
 	},
 	json: {
 		padding: 6,
-		fontWeight : "bold",
+		fontWeight: "bold",
 		fontSize: 15,
 	},
 	logs: {
@@ -409,9 +448,9 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		margin: 30,
 	},
-	flexLog : {
+	flexLog: {
 		display: 'flex',
 		flexDirection: "row",
-		alignContent : "center"
+		alignContent: "center"
 	}
 })
