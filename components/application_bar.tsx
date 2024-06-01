@@ -6,7 +6,7 @@ import { Appbar } from "react-native-paper";
 export function ApplicationBar({ customTitle, closeMenuFunction } : { customTitle ?: string , closeMenuFunction ?: () => void }) {
 
     const MORE_ICON = Platform.OS === 'ios' ? 'dots-horizontal' : 'dots-vertical';
-    const title = customTitle ? customTitle : "Developing App";
+    const title = customTitle ? customTitle : "Near by Share";
 
     if( closeMenuFunction ) {
         return (
