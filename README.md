@@ -1,79 +1,87 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
-
 # Getting Started
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
-
-## Step 1: Start the Metro Server
-
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
-
-To start Metro, run the following command from the _root_ of your React Native project:
-
-```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+```
+npm ci 
 ```
 
-## Step 2: Start your Application
+`ci` オプションを選択する理由は、度重なる更新によってなぜかビルトが失敗することがあるので
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+キャッシュをクリアする目的で `ci` オプションを選んでいるって感じです。
 
-### For Android
+できなかったら `i` でも大丈夫ですが、多分ビルドに失敗します。
 
-```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### For iOS
+# パッケージの更新があった場合の更新方法
 
 ```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+git pull #更新
+npm ci # パッケージを根本的に再インストールする
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+またここでも `ci` です。理由は同じです。
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+# 更新の方法
 
-## Step 3: Modifying your App
+更新は極めて簡単(当社比)ですが、いくつかルールを設けたいと思っています。
 
-Now that you have successfully run the app, let's modify it.
+まずブランチを作ります。更新の際はそれを忘れないようにしましょう。
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+```
+git checkout update-[name]
+```
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+これは現在のbranchを設定する魔法のコマンドです。
 
-## Congratulations! :tada:
+ここから更新を開始しましょう。
 
-You've successfully run and modified your React Native App. :partying_face:
+もし作業を終えたら、次のコマンドを実行してください：
 
-### Now what?
+```
+git add .  #変更を取り込む。 
+```
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
+- 注意
+このとき `.gitignore` で `node_modules` が除外されていることを確認してください。
 
-# Troubleshooting
+```bash
+git commit -m "ここにはコミットめっせーじが入ります。"
+```
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+コミットメッセージは、多人数開発が基本となった形をとります。
 
-# Learn More
+まず、自分がこのコミットで何を行ったかを最初のカッコに入れます。
 
-To learn more about React Native, take a look at the following resources:
+- バグの修正 `fix`
+- 新機能 `feat` / `update`
+- コミットの取り消し `revert`
+- ファイルの削除 `del`
+...etc
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+など、とりあえず自分が何をしたかを最初に入れます。
+
+あとは、基本的には英語のほうが望ましいですがコミットの詳細な説明を入れます。
+
+もし、あなたが何か重大なバグを修正した際には
+
+```bash
+... -m "[fix] fixed impotant bug"
+```
+
+などの簡単でいい英語で更新の内容を伝えましょう。文法が間違っていても、きっと伝わります。
+
+最後に、あなたのcommitをpushしましょう。
+
+```bash
+git push origin [さっきのbranch名]
+```
+
+そしたら次に、githubのPRを立てます。
+
+PRというのは、自分の変更を競合なしにメインブランチに取り込む方法です。
+
+`Pull Requests > New Request` であたらしいPRを立ててください。
+
+そしたらレビュアーを`akikaki-bot`にして、私のレビューを待ってください。私が精査します。
+
+もし通らなかったら何かが悪いので、私のコメントを見てください。
+
+これで完璧です👍！PRが通るとあなたのブランチは勝手に消されるので新しい作業を始める際はまた新しいブランチを立ててくださいね！
