@@ -3,17 +3,28 @@ import { Appbar } from "react-native-paper";
 
 
 
-export function ApplicationBar({ customTitle, closeMenuFunction } : { customTitle ?: string , closeMenuFunction ?: () => void }) {
+export function ApplicationBar(
+    { 
+        customTitle, 
+        closeMenuFunction , 
+        detailMenuFunction
+    } : { 
+        customTitle ?: string , 
+        closeMenuFunction ?: () => void, 
+        detailMenuFunction ?: () => void
+    }
+) {
 
     const MORE_ICON = Platform.OS === 'ios' ? 'dots-horizontal' : 'dots-vertical';
     const title = customTitle ? customTitle : "Near by Share";
+
 
     if( closeMenuFunction ) {
         return (
             <Appbar.Header>
                 <Appbar.Content title={title} />
                 <Appbar.Action icon="close" onPress={closeMenuFunction} />
-                <Appbar.Action icon={MORE_ICON} onPress={() => {}} />
+                <Appbar.Action icon={MORE_ICON} onPress={detailMenuFunction ?? (() => {})} />
             </Appbar.Header>
         )
     }
@@ -22,7 +33,7 @@ export function ApplicationBar({ customTitle, closeMenuFunction } : { customTitl
     return (
         <Appbar.Header>
             <Appbar.Content title={title} />
-            <Appbar.Action icon={MORE_ICON} onPress={() => {}} />
+            <Appbar.Action icon={MORE_ICON} onPress={detailMenuFunction ?? (() => {})} />
         </Appbar.Header>
     )
 }
