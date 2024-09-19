@@ -133,8 +133,12 @@ export default class App extends Component {
 			} as Ask
 		})
 
-		httpbridge.post("/Upload", async (request, response) => {
-			const data = request.data
+		httpbridge.post<string>("/upload", async (request, response) => {
+			this.state.logs.push({
+				emoji: '📨',
+				message: `Received ${JSON.parse( request.data ) } bytes of data`
+			})
+			const data = Buffer.from( JSON.parse( request.data ).image )
 			this.state.logs.push({
 				emoji: '📨',
 				message: `Received ${data.byteLength} bytes of data`
@@ -487,15 +491,19 @@ export default class App extends Component {
 				message: `Authorization granted by ${service.host}(${service.addresses[0]}) successfully`
 			})
 
-			await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/Upload`, {
+			this.state.logs.push({
+				emoji: '📡',
+				message: `POST http://${service.host}:${this.AIRDROP_HTTP_PORT}/upload`
+			})
+
+			await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/upload`, {
 				method: "POST",
 				headers: {
-					"Content-Type": "application/x-cpio",
-					"Transfer-Encoding": "chunked",
-					"Content-Length": "0",
-					"Connection": "close"
+					"Content-Type": "application/json",
 				},
-				body: imageBuff.toString()
+				body: JSON.stringify({
+					"image": imageBuff.toString()
+				})
 			})
 
 			this.state.logs.push({
