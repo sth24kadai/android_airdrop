@@ -23,5 +23,49 @@ export class StaticBufferValues {
 		]);
 	}
 
+	/**
+	 * @deprecated OMG使ってない
+	 * いらない
+	 */
+	static getDeviceBitfield( field : number ){
+		const version = field >> 5;
+		const visibility = (field >> 4) & 1;
+		const deviceType = (field >> 1) & 7;
+		const reserved = field & 1;
+		return {
+			version,
+			visibility,
+			deviceType,
+			reserved,
+			bitField: (version << 5) | (visibility << 4) | (deviceType << 1) | reserved
+		}
+	}
+
+		
+	static getTextRecodeValue( buffer : Uint8Array ) {
+		console.log(
+			buffer
+		)
+		const version = buffer[0] >> 5;
+		const visibility = (buffer[0] >> 4) & 1;
+		const deviceType = (buffer[0] >> 1) & 7;
+		const reserved = buffer[0] & 1;
+		const bitField = (version << 5) | (visibility << 4) | (deviceType << 1) | reserved;
+		const randomBytes = buffer.slice(1, 17);
+		const nameLength = buffer[17];
+		const nameChars = buffer.slice(18, 18 + nameLength);
+
+		return {
+			version,
+			visibility,
+			deviceType,
+			reserved,
+			bitField,
+			randomBytes,
+			nameLength,
+			nameChars
+		}
+	}
+
 
 }

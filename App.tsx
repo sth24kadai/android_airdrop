@@ -1,3 +1,5 @@
+// #region Imports
+import 'react-native-gesture-handler'
 import React, { Component } from 'react'
 import {
 	Platform,
@@ -10,683 +12,83 @@ import {
 	TextBase,
 	ScrollView as RNScrollView,
 } from 'react-native'
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import SafeAreaView from 'react-native-safe-area-view';
-import { Icon, ListItem } from 'react-native-elements'
 import Zeroconf, { Service } from 'react-native-zeroconf'
-import { BridgeServer } from 'react-native-http-bridge-refurbished';
-import * as ImagePicker from 'react-native-image-picker';
-import { 
-	ActivityIndicator, 
-	Text as PaperText, 
-	Button as PaperButton 
-} from 'react-native-paper';
-
+import { NavigationContainer } from '@react-navigation/native'
+import { createStackNavigator } from '@react-navigation/stack'
 import { Buffer } from 'buffer';
 
 import { Ask } from './types/airdrop.ask';
-import { ApplicationBar } from './components/application_bar';
-import { AutoHeightImage } from './components/autosizedImage';
-import { StaticBufferValues } from './components/staticBufferValues';
-import { Discover } from './types/airdrop.discover';
-//@ts-ignore
+import { Context } from './components/context'
 
-const zeroconf = new Zeroconf()
+const Stack = createStackNavigator()
 
-interface State {
-	isScanning: boolean
-	selectedService: string | null
-	services: { [key: string]: Service }
-	logs: {
-		emoji: string,
-		message: string
-	}[],
-	showLogs: boolean,
-	image: string | null,
-	senderData: Ask | null,
-	notification: Notification | null
-	showsDetailDisplay : boolean 
-}
-
-interface Notification {
-	emoji: string,
-	message: string
-}
-
+import HomeScreen from './src/HomeScreen'
+import DetailScreen from "./src/DetailScreen";
+import { InternalState, Notification } from './types'
+import LogScreen from './src/logScreen'
 /**
  * アプリのエントリーポイント
  */
 export default class App extends Component {
 
-	/**
-	 * ステート管理	
-	 */
-	public state: State = {
-		isScanning: false,
-		selectedService: null,
-		services: {} as { [key: string]: Service },
-		logs: [],
-		showLogs: false,
-		image: null,
-		senderData: {} as Ask,
-		notification: {} as Notification,
-		showsDetailDisplay : false
-	}
+	public state: InternalState
 
-	/**
-	 * Zeroconfのインターバルハンドラ変数	
-	 */
-	public timeout: NodeJS.Timeout | undefined = void 0
+	constructor(props: any) {
+		super(props);
 
-	/**
-	 * 使用するポート
-	 */
-	public AIRDROP_HTTP_PORT = 8771
-
-	/**
-	 * HTTPサーバーのインスタンス
-	 */
-	private __BridgeServer: BridgeServer | null = null
-
-	/**
-	 * HTTPサーバーを起動します。
-	 * 
-	 * @returns 
-	 */
-	public httpServer() {
-		const httpbridge = new BridgeServer("neardrop.local", true)
-		httpbridge.listen(this.AIRDROP_HTTP_PORT);
-
-		this.state.logs.push({
-			emoji: '🔗',
-			message: `Starting HTTP server on port ${this.AIRDROP_HTTP_PORT}`
-		})
-
-		httpbridge.get('/info', async ( request, response ) => {
-			return ({
-				status : "OK",
-				data : {
-					clientName : "Nearby Share Development Device",
-					clientModel : Platform.OS
-				}
-			})
-		})
-
-		httpbridge.post("/Discover", async (request, response) => {
-			return {
-				"ReceiverMediaCapabilities": Buffer.from(JSON.stringify({
-					version: 1
-				})),
-				"ReciverComputerName": "Google Pixel 6a",
-				"ReceiverModelName": "Pixel 6a",
-			} as Discover
-		})
-
-		httpbridge.post<Ask>("/Ask", async (request, response) => {
-
-			const data = request.data
-			this.state.senderData = data as Ask
-
-			return {
-				"ReceiverComputerName": "Google Pixel 6a",
-				"ReceiverModelName": "Pixel 6a"
-			} as Ask
-		})
-
-		httpbridge.post<string>("/upload", async (request, response) => {
-			this.state.logs.push({
-				emoji: '📨',
-				message: `Received ${JSON.parse( request.data ) } bytes of data`
-			})
-			const data = Buffer.from( JSON.parse( request.data ).image )
-			this.state.logs.push({
-				emoji: '📨',
-				message: `Received ${data.byteLength} bytes of data`
-			})
-
-			this.state.notification = {
-				emoji: '📨',
-				message: `Received ${data.byteLength} bytes of data`
-			}
-
-			return {
-				"status": "OK"
-			}
-		})
-
-		return httpbridge;
-	}
-
-	/**
-	 * デバイスの種類を取得します。
-	 * 依存しないstaticな関数
-	 */
-	static get deviceType() : number {
-		const device = Platform.OS;
-		switch( device ) {
-			case "android" : return 1;
-			case "ios" : return 1;
-			case "macos" : return 3;
-			case "windows" : return 3;
-			case "web" : return 0;
-			default: return 0;
+		this.state = {
+			isScanning: false,
+			selectedService: null,
+			services: {} as { [key: string]: Service & { clientName: string, clientModel: string } },
+			recivedDatas: {} as { from: string, bytes: number, data: Buffer }[],
+			logs: [],
+			showLogs: false,
+			image: null,
+			senderData: {} as Ask,
+			notification: {} as Notification,
+			showsDetailDisplay: false
 		}
 	}
 
-	/**
-	 * TXTレコードの値を生成します。 
-	 */
-	static TXTRecodeValue() : Uint8Array {
-		// Generated by Github Copilot :)
-		const version = 0;
-		const visibility = 0; 
-		const deviceType = App.deviceType; 
-		const reserved = 0; 
-		const bitField = (version << 5) | (visibility << 4) | (deviceType << 1) | reserved;
-	
-		// 16バイトのランダムな値を生成
-		const randomBytes = new Uint8Array(16);
-		for(let i = 0; i < 16; i++) {
-			randomBytes[i] = Math.floor(Math.random() * 256);
-		}
-	
-		// ユーザーが見ることができるデバイス名をUTF-8でエンコードし、その長さ（1バイト）をプレフィックスとして追加
-		let nameChars = new TextEncoder().encode("Nearby Share Development Device");
-		if(nameChars.length > 255) {
-			nameChars = nameChars.slice(0, 255);
-		}
-		const nameLength = nameChars.length;
-	
-		// すべてを1つのUint8Arrayに結合
-		const EndpointInfo = new Uint8Array(1 + 16 + 1 + nameChars.length);
-		EndpointInfo[0] = bitField;
-		EndpointInfo.set(randomBytes, 1);
-		EndpointInfo[17] = nameLength;
-		EndpointInfo.set(nameChars, 18);
-	
-		return EndpointInfo;
-	}
-
-	/**
-	 * @deprecated OMG使ってない
-	 * いらない
-	 */
-	static getDeviceBitfield( field : number ){
-		const version = field >> 5;
-		const visibility = (field >> 4) & 1;
-		const deviceType = (field >> 1) & 7;
-		const reserved = field & 1;
-		return {
-			version,
-			visibility,
-			deviceType,
-			reserved,
-			bitField: (version << 5) | (visibility << 4) | (deviceType << 1) | reserved
-		}
-	}
-
-	/**
-	 * Reactの関数
-	 * コンポーネントがマウントされたときに発火する
-	 */
-	componentDidMount() {
-		/* HTTPサーバーを起動　*/
-		this.__BridgeServer = this.httpServer();
-		/* データを初期フェッチ */
-		this.refreshData()
-
-		/**
-		 * mDNSのTXTレコード
-		 */
-		const textRecode = App.TXTRecodeValue()
-
-		/* mDNSサービスを開始 */
-		zeroconf.publishService(
-			/* サービス名 */
-			'FC9F5ED42C8A',
-			/* プロトコル */
-			'tcp',
-			/* ドメイン */
-			'local.',
-			/* ホスト名 */
-			Buffer.from( textRecode ).toString('base64'),
-			/* 使用ポート */
-			5353,
-			/* TXTレコード */
-			{
-				n: Buffer.from(textRecode).toString('base64'),
-			}
-		)
-
-		console.log(
-			`EndpointInfo: ${Buffer.from(textRecode).toString("base64")}`
-		)
-
-		/* mDNSのイベントハンドラ */
-		zeroconf.on('start', () => {
-			this.setState({ isScanning: true })
-			this.state.logs.push({
-				emoji: '🔍',
-				message: 'Started scanning and lunching the mDNS service...'
-			})
-
-		})
-
-		zeroconf.on('stop', () => {
-			this.setState({ isScanning: false })
-			this.state.logs.push({
-				emoji: '🛑',
-				message: 'Stopped scanning'
-			})
-		})
-
-		zeroconf.on('update', () => {
-			this.state.logs.push({
-				emoji: '🔄',
-				message: 'Updating Data...'
-			})
-		})
-
-		zeroconf.on('resolved', async service => {
-			this.state.logs.push({
-				emoji: '🐉',
-				message: `Resolved ${service.name} (${service.host})`
-			})
-			this.state.logs.push({
-				emoji: '🔗',
-				message: JSON.stringify(service)
-			})
-
-			const deviceName = await this.getDeviceName(service)
-			if (deviceName !== null) {
-				this.state.logs.push({
-					emoji: '📱',
-					message: `Device Name: ${deviceName.data.clientName} (${deviceName.data.clientModel})`
-				})
-			}
-
-			this.setState({
-				services: {
-					...this.state.services,
-					[service.host]: service,
-				},
-			})
-		})
-
-
-		zeroconf.on('error', err => {
-			this.setState({ isScanning: false })
-			this.state.logs.push({
-				emoji: '🚨',
-				message: `Error: ${err}`
-			})
+	setObjectState = (state: Partial<InternalState>) => {
+		this.setState({
+			...state
 		})
 	}
 
-	/**
-	 * 
-	 * デバイス名を取得する関数。serviceを引数に取り、Promiseを返します。
-	 * 
-	 * @param {Service} service - サービス情報
-	 */
-	async getDeviceName( service : Service ) {
-		const response = await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/info`)
-		if( response.ok ) {
-			const data = await response.json() as { status : string, data : { clientName : string, clientModel : string } };
-			return data;
-		}
-
-		return null;
-	}
-
-	/**
-	 * Reactの関数
-	 * コンポーネントがアンマウントされたときに発火する
-	 */
-	componentWillUnmount() {
-
-		this.state.logs.push({
-			emoji: '🛑',
-			message: 'Unmounting the component and stopping the mDNS service...'
-		})
-
-		this.__BridgeServer !== null && this.__BridgeServer.stop()
-		zeroconf.stop();
-	}
-
-	/**
-	 * レンダリング関数
-	 */
-	renderRow = ({ item, index }: { item: string, index: number }) => {
-		const { name, fullName, host, addresses } = this.state.services[item]
-
+	render(): React.ReactNode {
 		return (
-			<TouchableOpacity
-				onPress={() =>
-					this.setState({
-						selectedService: host,
-					})}
-				style={styles.textWithIcon}
+			<Context.Provider
+				value={{
+					...this.state,
+					setObjectState: this.setObjectState
+				}}
 			>
-				<Icon name="smartphone" size={35} />
-				<ListItem.Content>
-					<ListItem.Title>{host}</ListItem.Title>
-					<ListItem.Subtitle>{fullName} / {addresses.join(',')}</ListItem.Subtitle>
-				</ListItem.Content>
-			</TouchableOpacity>
-		)
-	}
-
-	refreshData = () => {
-		const { isScanning } = this.state
-		if (isScanning) {
-			return
-		}
-		this.setState({ services: [] })
-
-		zeroconf.scan('FC9F5ED42C8A', 'tcp', undefined)
-		this.state.logs.push({
-			emoji: '🔍♻️',
-			message: 'ReScanning for services...'
-		})
-
-		clearTimeout(this.timeout)
-		this.timeout = setTimeout(() => {
-			zeroconf.stop()
-		}, 5000)
-	}
-
-	showlogs = () => {
-		this.setState({ selectedService: null })
-		this.setState({ showLogs: true })
-	}
-
-	imagePicker = () => {
-		const option: ImagePicker.ImageLibraryOptions = {
-			mediaType: 'photo',
-			quality: 1,
-			includeBase64: true
-		}
-
-		ImagePicker.launchImageLibrary(option, (resposeImage) => {
-			if (resposeImage.didCancel) {
-				this.state.logs.push({
-					emoji: '[!]',
-					message: `User cancelled the image picker`
-				})
-			}
-			else if (resposeImage.errorMessage || resposeImage.errorCode) {
-				this.state.logs.push({
-					emoji: '[!]',
-					message: `Image picker error: ${resposeImage.errorCode || resposeImage.errorMessage}`
-				})
-			}
-			else {
-				if (resposeImage.assets === null || resposeImage.assets?.length === 0) return;
-				if (!Array.isArray(resposeImage.assets)) return;
-				if (typeof resposeImage.assets[0].base64 === "undefined") return;
-				this.state.logs.push({
-					emoji: '📸',
-					message: `Image selected: ${JSON.stringify(resposeImage.assets[0].originalPath)}`
-				})
-				this.setState({ image: resposeImage.assets[0].uri })
-			}
-		})
-	}
-
-	sendImage = async (service: Service) => {
-		if (this.state.senderData === null) return;
-		if (this.state.image === null) return;
-
-		//const { senderData } = this.state;
-
-		const imageRes = await fetch(this.state.image);
-		this.state.logs.push({
-			emoji: '📡',
-			message: `Fetching Image : ${this.state.image}`
-		})
-		const imageBlob = await imageRes.arrayBuffer();
-		this.state.logs.push({
-			emoji: '📡',
-			message: `Fetched Image : ${imageBlob.byteLength} bytes from ${this.state.image}`
-		})
-
-		const imageBuff = Buffer.from(
-			imageBlob
-		);
-
-		this.state.logs.push({
-			emoji: '💠',
-			message: `Buffered Image : ${imageBuff.byteLength} bytes `
-		})
-
-		this.state.logs.push({
-			emoji: '📡',
-			message: `POST http://${service.host}:${this.AIRDROP_HTTP_PORT}/Ask`
-		})
-
-
-
-		const response = await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/Ask`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify({
-				"image": this.state.image,
-				"senderData": this.state.senderData
-			})
-		}).catch((err) => {
-			this.state.logs.push({
-				emoji: '🚨',
-				message: `Authorization not granted by ${service.fullName}(${service.addresses[0]}) successfully`
-			})
-		})
-
-		if (response === undefined) return;
-
-		if (response.ok) {
-			this.state.logs.push({
-				emoji: '✨',
-				message: `Authorization granted by ${service.host}(${service.addresses[0]}) successfully`
-			})
-
-			this.state.logs.push({
-				emoji: '📡',
-				message: `POST http://${service.host}:${this.AIRDROP_HTTP_PORT}/upload`
-			})
-
-			await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/upload`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					"image": imageBuff.toString()
-				})
-			})
-
-			this.state.logs.push({
-				emoji: '📨',
-				message: `Image sent to ${service.host} successfully`
-			})
-		} else {
-			this.state.logs.push({
-				emoji: '🚨',
-				message: `This is not a valid AirDrop service: ${service.host}`
-			})
-		}
-	}
-
-	static getTextRecodeValue( buffer : Uint8Array ) {
-		console.log(
-			buffer
-		)
-		const version = buffer[0] >> 5;
-		const visibility = (buffer[0] >> 4) & 1;
-		const deviceType = (buffer[0] >> 1) & 7;
-		const reserved = buffer[0] & 1;
-		const bitField = (version << 5) | (visibility << 4) | (deviceType << 1) | reserved;
-		const randomBytes = buffer.slice(1, 17);
-		const nameLength = buffer[17];
-		const nameChars = buffer.slice(18, 18 + nameLength);
-
-		return {
-			version,
-			visibility,
-			deviceType,
-			reserved,
-			bitField,
-			randomBytes,
-			nameLength,
-			nameChars
-		}
-	
-	}
-
-	render() {
-		const { services, selectedService, isScanning } = this.state
-		console.log(selectedService)
-
-		const service = selectedService ? services[selectedService] : null;
-
-		if( this.state.showsDetailDisplay && service ) {
-			return (
-				<SafeAreaProvider>
-					<SafeAreaView style={styles.container}>
-						<ApplicationBar 
-							closeMenuFunction={() => this.setState({ selectedService: null })} 
-							customTitle='デバイスの詳細情報'  
-							detailMenuFunction={() => this.setState({ showsDetailDisplay: false })}
+				<NavigationContainer>
+					<Stack.Navigator>
+						<Stack.Screen
+							name="デバイスの選択"
+							//@ts-ignore
+							component={HomeScreen}
 						/>
-						<RNScrollView>
-							<View style={styles.udpadding}>
-								<PaperText variant="headlineMedium" >
-									{service.host.replace('-', " ")} ({service.addresses.join(', ')})
-								</PaperText>
-								<PaperText>
-									{service.txt.n}
-								</PaperText>
-								<PaperText>
-									テキストレコードバッファー : {JSON.stringify(App.getTextRecodeValue(new Uint8Array(Buffer.from(service.txt.n))))}
-								</PaperText>
-								<PaperText>
-									ホスト名 : {service.host}
-								</PaperText>
-								<PaperText>
-									アドレス : {service.addresses.join(', ')}
-								</PaperText>
-								<PaperText>
-									フルネーム : {service.fullName}
-								</PaperText>
-								<PaperText>
-									ポート : {service.port}
-								</PaperText>
-								<PaperText>
-									名前バッファー : {Buffer.from(service.name).toString("hex")}
-								</PaperText>
-								<PaperText>
-									DeviceType : { App.getTextRecodeValue(new Uint8Array(Buffer.from(service.txt.n))).deviceType }
-								</PaperText>
-								<PaperText> 
-									nubejson : { new Uint8Array( Buffer.from( service.txt.n ) )[0] }
-								</PaperText>
-							</View>
-						</RNScrollView>
-					</SafeAreaView>
-				</SafeAreaProvider>
-			)
-		}
-
-		if (service) {
-			return (
-				<SafeAreaProvider>
-					<SafeAreaView style={styles.container}>
-						<ApplicationBar 
-							closeMenuFunction={() => this.setState({ selectedService: null })} 
-							customTitle='デバイスの詳細' 
-							detailMenuFunction={() => this.setState({ showsDetailDisplay: true })}
+						<Stack.Screen
+							name="DetailScreen"
+							//@ts-ignore
+							component={DetailScreen}
 						/>
-						<RNScrollView>
-							<View style={styles.udpadding}>
-								<PaperText variant="headlineMedium" >
-									{service.host.replace('-', " ")} ({service.addresses.join(', ')})
-								</PaperText>
-								<PaperText>
-									正常に認識されています。
-								</PaperText>
-							</View>
-							<PaperButton mode="contained-tonal" onPress={this.imagePicker}>
-								画像を選択する
-							</PaperButton>
-							<View style={styles.udpadding}>
-								{this.state.image && <AutoHeightImage source={{ uri: this.state.image }} width={350} />}
-							</View>
-							{this.state.image && <PaperButton mode="contained-tonal" onPress={() => this.sendImage(service)}>送信する</PaperButton>}
-						</RNScrollView>
-					</SafeAreaView>
-				</SafeAreaProvider>
-			)
-		}
-
-		if (this.state.showLogs) {
-			return (
-				<SafeAreaProvider>
-					<SafeAreaView style={styles.container}>
-						<ApplicationBar closeMenuFunction={() => this.setState({ showLogs: false })} customTitle='デバックログ' />
-						<RNScrollView style={styles.logs} >
-							{this.state.logs.map((log, index) => (
-								<View style={styles.flexLog} key={"v" + index}>
-									<Text key={index} style={styles.logs}>{log.emoji}</Text>
-									<Text key={"k" + index} style={styles.json}>{log.message}</Text>
-								</View>
-							))}
-							<PaperButton icon="delete" mode='contained-tonal' onPress={() => this.setState({ logs: [] })}>
-								ログをクリアする
-							</PaperButton>
-						</RNScrollView>
-					</SafeAreaView>
-				</SafeAreaProvider>
-			)
-		}
-
-		return (
-			<SafeAreaProvider>
-				<SafeAreaView style={styles.container}>
-					<ApplicationBar />
-					{
-						isScanning ? (
-							<>
-								<View style={styles.textWithIcon}>
-									<ActivityIndicator size="small" />
-									<Text>付近のデバイスを検索中</Text>
-								</View>
-							</>
-						) : (
-							<>
-								<FlatList
-									data={Object.keys(services)}
-									renderItem={this.renderRow}
-									keyExtractor={key => key}
-									refreshControl={
-										<RefreshControl
-											refreshing={isScanning}
-											onRefresh={this.refreshData}
-											tintColor="skyblue"
-										/>
-									}
-								/>
-								<PaperButton icon="archive" mode='contained-tonal' onPress={this.showlogs}>
-									デバックログを確認する
-								</PaperButton>
-							</>
-						)
-					}
-				</SafeAreaView>
-			</SafeAreaProvider>
+						<Stack.Screen
+							name="LogScreen"
+							//@ts-ignore
+							component={LogScreen}
+						/>
+					</Stack.Navigator>
+				</NavigationContainer>
+			</Context.Provider>
 		)
 	}
 }
+
+//#region Styles
 
 const styles = StyleSheet.create({
 	udpadding: {
@@ -744,3 +146,5 @@ const styles = StyleSheet.create({
 		alignContent: "center"
 	}
 })
+
+//#endregion
