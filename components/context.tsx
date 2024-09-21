@@ -7,7 +7,7 @@ export const Context = React.createContext({
     isScanning: false,
     selectedService: "" as string | null,
     services: {} as { [key: string]: Service & { clientName : string, clientModel : string } },
-    recivedDatas : [] as { from : string, bytes : number, data : Buffer }[],
+    recivedDatas : [] as { from : string, bytes : number, data : Buffer, uri : string }[],
     logs: [] as { emoji: string, message: string }[],
     showLogs: false,
     image: "" as string | null,

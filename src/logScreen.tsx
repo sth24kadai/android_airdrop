@@ -10,15 +10,9 @@ import {
 import { 
 	Button as PaperButton 
 } from 'react-native-paper';
-
 import { NativeStackScreenProps } from "react-native-screens/lib/typescript/native-stack/types";
 
-type RootStackParamList = {
-    Home: undefined;
-    DetailScreen: undefined;
-    LogScreen: undefined;
-};
-
+import { RootStackParamList } from "../types";
 
 export default class LogScreen extends React.Component<NativeStackScreenProps<RootStackParamList, 'LogScreen'>> {
     static contextType = Context;

@@ -18,29 +18,15 @@ import {
 	ActivityIndicator, 
 	Button as PaperButton 
 } from 'react-native-paper';
-import DeviceInfo from 'react-native-device-info';
-
 import { Buffer } from 'buffer';
+import { NativeStackScreenProps } from "react-native-screens/lib/typescript/native-stack/types";
 
-import { Ask } from '../types/airdrop.ask';
-import { Discover } from '../types/airdrop.discover';
-import { HTTPImageFrom, HTTPImageRequest } from '../types';
+import { RootStackParamList } from '../types';
 import { Context } from '../components/context';
-//@ts-ignore
-
 // #endregion
-// #region Zeroconf Class Definition
+
 
 const zeroconf = new Zeroconf()
-
-// #endregion
-
-import { NativeStackScreenProps } from "react-native-screens/lib/typescript/native-stack/types";
-type RootStackParamList = {
-    デバイスの選択: undefined;
-    DetailScreen: undefined;
-    LogScreen: undefined;
-};
 
 /**
  * アプリのエントリーポイント
@@ -63,96 +49,6 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 	 * HTTPサーバーのインスタンス
 	 */
 	private __BridgeServer: BridgeServer | null = null
-
-// #region HTTP Client Server
-	/**
-	 * HTTPサーバーを起動します。
-	 * 
-	 * @returns 
-	 */
-	public httpServer() {
-		const httpbridge = new BridgeServer("neardrop.local", true)
-		httpbridge.listen(this.AIRDROP_HTTP_PORT);
-
-		this.context.logs.push({
-			emoji: '🔗',
-			message: `Starting HTTP server on port ${this.AIRDROP_HTTP_PORT}`
-		})
-
-		httpbridge.get('/info', async ( request, response ) => {
-			return ({
-				status : "OK",
-				data : {
-					clientId : DeviceInfo.getUniqueId(),
-					clientName : DeviceInfo.getModel(),
-					clientModel : Platform.OS
-				}
-			})
-		})
-
-		httpbridge.get('/authorization', async ( request , response ) => {
-			
-		})
-
-		httpbridge.post("/Discover", async (request, response) => {
-			return {
-				"ReceiverMediaCapabilities": Buffer.from(JSON.stringify({
-					version: 1
-				})),
-				"ReciverComputerName": "Google Pixel 6a",
-				"ReceiverModelName": "Pixel 6a",
-			} as Discover
-		})
-
-		httpbridge.post<Ask>("/Ask", async (request, response) => {
-
-			const data = request.data
-			this.context.senderData = data as Ask
-
-			return {
-				"ReceiverComputerName": "Google Pixel 6a",
-				"ReceiverModelName": "Pixel 6a"
-			} as Ask
-		})
-
-		httpbridge.post<string>("/upload", async ( request, response ) => {
-			const postJSONData = JSON.parse( JSON.stringify( request.data ) ) as HTTPImageRequest
-			console.log( postJSONData.status ) 
-
-			const deviceInfomationfromHash = JSON.parse(
-				Buffer.from( postJSONData.from, "base64" ).toString("utf-8")
-			) as HTTPImageFrom
-
-			const data = Buffer.from( postJSONData.image )
-			this.context.logs.push({
-				emoji : "⚠️",
-				message : `Received ${data.byteLength} bytes of data from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`
-			})
-			this.context.logs.push({
-				emoji: '📨',
-				message: `Received ${data.byteLength} bytes of data`
-			})
-
-			this.context.notification = {
-				emoji: '📨',
-				message: `Received ${data.byteLength} bytes of data`
-			}
-
-			this.context.recivedDatas.push({
-				from: postJSONData.from,
-				bytes: data.byteLength,
-				data: data
-			})
-
-			return {
-				"status": "OK"
-			}
-		})
-
-		return httpbridge;
-	}
-
-//#endregion
 
 // #region Static Functions
 	/**
@@ -218,7 +114,7 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 	componentDidMount() {
 		// #region mDNS Configuration
 		/* HTTPサーバーを起動　*/
-		this.__BridgeServer = this.httpServer();
+
 		/* データを初期フェッチ */
 		this.refreshData()
 
@@ -324,6 +220,15 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 	 */
 	async getDeviceName( service : Service ) {
 		const response = await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/info`)
+		.catch( err => {
+			this.context.logs.push({
+				emoji: '🚨',
+				message: `Error on getDeviceName : ${err}`
+			})
+			return null;
+		});
+		if( response === null ) return null;
+		
 		if( response.ok ) {
 			const data = await response.json() as { status : string, data : { clientId : string, clientName : string, clientModel : string } };
 			return data;
@@ -424,9 +329,14 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 										/>
 									}
 								/>
-								<PaperButton icon="archive" mode='contained-tonal' onPress={() => this.props.navigation.navigate('LogScreen')}>
-									デバックログを確認する
-								</PaperButton>
+								<View style={styles.flexColumn}>
+									<PaperButton icon="image" mode='contained-tonal' onPress={() => this.props.navigation.navigate("写真の保存")}>
+										写真を見る
+									</PaperButton>
+									<PaperButton icon="archive" mode='contained-tonal' onPress={() => this.props.navigation.navigate('LogScreen')}>
+										デバックログを確認する
+									</PaperButton>
+								</View>
 							</>
 						)
 					}
@@ -441,6 +351,11 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 //#region Styles
 
 const styles = StyleSheet.create({
+	flexColumn : {
+		display: 'flex',
+		flexDirection: 'column',
+		gap: 10
+	},
 	udpadding: {
 		paddingTop: 10,
 		paddingBottom: 10

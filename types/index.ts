@@ -15,7 +15,7 @@ export interface InternalState {
 	senderData: Ask | null,
 	notification: Notification | null
 	showsDetailDisplay : boolean 
-	recivedDatas : { from : string, bytes : number, data : Buffer }[]
+	recivedDatas : { from : string, bytes : number, data : Buffer, uri: string }[]
 }
 
 export interface Notification {
@@ -28,7 +28,8 @@ type HASH = string
 export interface HTTPImageRequest {
 	from : HASH
 	status : string,
-	image : string
+	image ?: string
+	uri : string
 }
 
 export interface HTTPImageFrom {
@@ -36,3 +37,6 @@ export interface HTTPImageFrom {
 	name : string
 	model : typeof Platform.OS
 }
+
+export type { Ask } from './airdrop.ask'
+export type { RootStackParamList } from './rootParamLists'

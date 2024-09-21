@@ -1,10 +1,8 @@
 import React, { ComponentClass } from 'react';
-import { Platform, StyleSheet, Text, View, ScrollView as RNScrollView,} from 'react-native';
+import { Platform, StyleSheet, Text, View, ScrollView as RNScrollView, Easing,} from 'react-native';
 
 import { NativeStackScreenProps } from "react-native-screens/lib/typescript/native-stack/types";
 import { Service } from 'react-native-zeroconf';
-import { Context } from '../components/context';
-import { HTTPImageFrom, HTTPImageRequest } from '../types';
 import DeviceInfo from 'react-native-device-info';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'react-native-image-picker';
@@ -13,14 +11,14 @@ import {
 	Text as PaperText, 
 	Button as PaperButton 
 } from 'react-native-paper';
-import { AutoHeightImage } from '../components/autosizedImage';
 import { Buffer } from 'buffer';
 
-type RootStackParamList = {
-    デバイスの選択: ComponentClass;
-    DetailScreen: undefined;
-    LogScreen: undefined;
-};
+import { HTTPImageFrom, HTTPImageRequest, RootStackParamList } from '../types';
+import { AutoHeightImage } from '../components/autosizedImage';
+import { Context } from '../components/context';
+import { Notifier } from 'react-native-notifier';
+import Gzip from 'rn-gzip';
+
 
 class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'DetailScreen'>> {
 
@@ -29,6 +27,10 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
     context!: React.ContextType<typeof Context>
 
     public AIRDROP_HTTP_PORT = 8771
+
+	public state = {
+		isSending : false
+	}
 
     public static async fromDeviceCreate() : Promise<HTTPImageFrom> {
 		return ({
@@ -39,6 +41,7 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 	}
 
     sendImage = async (service: Service) => {
+		this.setState({ isSending : true })
 		if (this.context.senderData === null) return;
 		if (this.context.image === null) return;
 
@@ -50,6 +53,7 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 			message: `Fetching Image : ${this.context.image}`
 		})
 		const imageBlob = await imageRes.arrayBuffer();
+		const uri = `data:${imageRes.headers.get('content-type')?.toLocaleLowerCase()};base64,${Buffer.from(imageBlob).toString('base64')}`;
 		this.context.logs.push({
 			emoji: '📡',
 			message: `Fetched Image : ${imageBlob.byteLength} bytes from ${this.context.image}`
@@ -74,14 +78,19 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 			headers: {
 				"Content-Type": "application/json"
 			},
-			body: JSON.stringify({
-				"image": this.context.image,
-				"senderData": this.context.senderData
-			})
 		}).catch((err) => {
 			this.context.logs.push({
 				emoji: '🚨',
 				message: `Authorization not granted by ${service.fullName}(${service.addresses[0]}) successfully`
+			})
+
+			Notifier.showNotification({
+				title: 'エラーが発生しました',
+				description: `写真を送ることができません。`,
+				duration: 5000,
+				showAnimationDuration: 800,
+				showEasing: Easing.ease,
+				hideEasing: Easing.ease,
 			})
 		})
 
@@ -90,6 +99,15 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 		const fromData = await App.fromDeviceCreate()
 
 		if (response.ok) {
+			Notifier.showNotification({
+				title: '送信中です。',
+				description: `写真を送信しています。`,
+				duration: 5000,
+				showAnimationDuration: 800,
+				showEasing: Easing.ease,
+				hideEasing: Easing.ease,
+			})
+
 			this.context.logs.push({
 				emoji: '✨',
 				message: `Authorization granted by ${service.host}(${service.addresses[0]}) successfully`
@@ -102,16 +120,19 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 
 			const hashedFromData = Buffer.from( JSON.stringify( fromData ) ).toString("base64")
 
+			const compressedData = Gzip.zip(JSON.stringify({
+				from: hashedFromData,
+				status : "Posting",
+				uri : uri
+			} as HTTPImageRequest))
+
+
 			const response = await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/upload`, {
 				method: "POST",
 				headers: {
-					"Content-Type": "application/json",
+					"Content-Type": "text/plain",
 				},
-				body: JSON.stringify({
-					from: hashedFromData,
-					status : "Posting",
-					image: imageBuff.toString()
-				} as HTTPImageRequest)
+				body: compressedData
 			})
 			if( response.ok ){
 				this.context.logs.push({
@@ -195,7 +216,7 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
                         <View style={styles.udpadding}>
                             {this.context.image && <AutoHeightImage source={{ uri: this.context.image }} width={350} />}
                         </View>
-                        {this.context.image && <PaperButton mode="contained-tonal" onPress={() => this.sendImage(service)}>送信する</PaperButton>}
+                        {this.context.image && <PaperButton mode="contained-tonal" onPress={() => this.sendImage(service)} disabled={ this.state.isSending }>{ this.state.isSending ? "送信中" : "送信する"}</PaperButton>}
                     </RNScrollView>
                 </SafeAreaView>
             </SafeAreaProvider>
