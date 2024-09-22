@@ -16,6 +16,7 @@ export interface InternalState {
 	notification: Notification | null
 	showsDetailDisplay : boolean 
 	recivedDatas : { from : string, bytes : number, data : Buffer, uri: string }[]
+	recivedShards : HTTPBufferRequest[]
 }
 
 export interface Notification {
@@ -30,6 +31,14 @@ export interface HTTPImageRequest {
 	status : string,
 	image ?: string
 	uri : string
+}
+
+export interface HTTPBufferRequest extends HTTPImageRequest {
+	shardIndex : number,
+	totalShards : number,
+	imgType : string
+	data : Buffer
+	type : string
 }
 
 export interface HTTPImageFrom {

@@ -43,9 +43,6 @@ export class StaticBufferValues {
 
 		
 	static getTextRecodeValue( buffer : Uint8Array ) {
-		console.log(
-			buffer
-		)
 		const version = buffer[0] >> 5;
 		const visibility = (buffer[0] >> 4) & 1;
 		const deviceType = (buffer[0] >> 1) & 7;

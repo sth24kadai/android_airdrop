@@ -1,15 +1,15 @@
 import React, { ComponentClass } from 'react';
-import { Platform, StyleSheet, Text, View, ScrollView as RNScrollView, Easing,} from 'react-native';
+import { Platform, StyleSheet, Text, View, ScrollView as RNScrollView, Easing, } from 'react-native';
 
 import { NativeStackScreenProps } from "react-native-screens/lib/typescript/native-stack/types";
 import { Service } from 'react-native-zeroconf';
 import DeviceInfo from 'react-native-device-info';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'react-native-image-picker';
-import { 
-	ActivityIndicator, 
-	Text as PaperText, 
-	Button as PaperButton 
+import {
+	ActivityIndicator,
+	Text as PaperText,
+	Button as PaperButton
 } from 'react-native-paper';
 import { Buffer } from 'buffer';
 
@@ -22,26 +22,26 @@ import Gzip from 'rn-gzip';
 
 class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'DetailScreen'>> {
 
-    static contextType = Context;
-    //@ts-ignore
-    context!: React.ContextType<typeof Context>
+	static contextType = Context;
+	//@ts-ignore
+	context!: React.ContextType<typeof Context>
 
-    public AIRDROP_HTTP_PORT = 8771
+	public AIRDROP_HTTP_PORT = 8771
 
 	public state = {
-		isSending : false
+		isSending: false
 	}
 
-    public static async fromDeviceCreate() : Promise<HTTPImageFrom> {
+	public static async fromDeviceCreate(): Promise<HTTPImageFrom> {
 		return ({
-			id : await DeviceInfo.getUniqueId(),
-			name : DeviceInfo.getModel(),
-			model : Platform.OS
+			id: await DeviceInfo.getUniqueId(),
+			name: DeviceInfo.getModel(),
+			model: Platform.OS
 		})
 	}
 
-    sendImage = async (service: Service) => {
-		this.setState({ isSending : true })
+	sendImage = async (service: Service) => {
+		this.setState({ isSending: true })
 		if (this.context.senderData === null) return;
 		if (this.context.image === null) return;
 
@@ -86,7 +86,7 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 
 			Notifier.showNotification({
 				title: 'エラーが発生しました',
-				description: `写真を送ることができません。`,
+				description: `承認されませんでした。`,
 				duration: 5000,
 				showAnimationDuration: 800,
 				showEasing: Easing.ease,
@@ -113,6 +113,11 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 				message: `Authorization granted by ${service.host}(${service.addresses[0]}) successfully`
 			})
 
+			console.log(`${Buffer.from(imageBlob).byteLength} bytes`)
+
+			await this.shardSend(Buffer.from(imageBlob), service, uri, imageRes.headers.get('content-type')?.toLocaleLowerCase() || "image/png")
+
+			/*
 			this.context.logs.push({
 				emoji: '📡',
 				message: `POST http://${service.host}:${this.AIRDROP_HTTP_PORT}/upload`
@@ -127,7 +132,7 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 			} as HTTPImageRequest))
 
 
-			const response = await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/upload`, {
+			const response = await fetch(`http://${service.addresses[0]}:${this.AIRDROP_HTTP_PORT}/upload`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "text/plain",
@@ -140,6 +145,7 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 					message: `Image sent to ${service.host} successfully`
 				})
 			}
+			*/
 		} else {
 			this.context.logs.push({
 				emoji: '🚨',
@@ -148,7 +154,91 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 		}
 	}
 
-    imagePicker = () => {
+
+	public promisedZip(data: object): Promise<string> {
+		return new Promise((resolve) => {
+			resolve( Gzip.zip(JSON.stringify(data)) )
+			console.log(`resolve gzip ----> Shard #${data}`)
+		})
+	}
+
+	public async shardSend(data: Buffer, service: Service, uri: string, typeofImage: string) {
+
+		const SHARD_BYTES = 32768 // 32KB
+		const shards = this.shardingManager(data, SHARD_BYTES)
+
+		console.log(`Shard #0 : ${shards[0].byteLength} bytes`)
+
+
+		this.context.logs.push({
+			emoji: '💎',
+			message: `Sharded ${shards.length} shards, each shard is ${SHARD_BYTES} bytes?`
+		})
+
+		const fromData = await App.fromDeviceCreate()
+
+		const hashedFromData = Buffer.from(JSON.stringify(fromData)).toString("base64")
+
+		console.log(Math.round(new Date().getTime() / 1000))
+
+		const compressedDatas = await Promise.all(
+			shards.map(async (shard, index) => {
+				console.log(`Pending gzip ----> Shard #${index}`)
+				const compressedData = await this.promisedZip({
+					from: hashedFromData,
+					status: "SHARD_POSTING",
+					uri: shard.toString("binary"),
+					totalShards: shards.length,
+					shardIndex: index,
+					imgType: typeofImage,
+				} as HTTPImageRequest)
+				console.log(`Gziped <---- Shard #${index}`)
+
+				return compressedData
+			})
+		)
+
+		await Promise.all(
+			compressedDatas.map(async (compressedData, index) => {
+				console.log(`Pending <---- Shard #${index}`)
+				const response = await fetch(`http://${service.addresses[0]}:${this.AIRDROP_HTTP_PORT}/upload/shard`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "text/plain",
+					},
+					body: compressedData
+				})
+
+				if (!response.ok) {
+					Notifier.showNotification({
+						title: 'エラーが発生しました',
+						description: `シャード(#${index})の送信に失敗しました。`,
+						duration: 5000,
+						showAnimationDuration: 800,
+						showEasing: Easing.ease,
+						hideEasing: Easing.ease,
+					});
+
+				}
+			})
+		)
+
+	}
+
+
+	public shardingManager(base64Data: Buffer, shardBytes = 8192): Buffer[] {
+		const data = base64Data
+		const totalShards = Math.ceil(data.byteLength / shardBytes)
+		const shards = []
+		for (let i = 0; i < totalShards; i++) {
+			const shard = data.subarray(i * shardBytes, (i + 1) * shardBytes)
+			shards.push(shard)
+		}
+		console.log(`Sharded ${shards.length} shards, each shard is ${shardBytes} bytes`)
+		return shards
+	}
+
+	imagePicker = () => {
 		const option: ImagePicker.ImageLibraryOptions = {
 			mediaType: 'photo',
 			quality: 1,
@@ -181,47 +271,47 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 		})
 	}
 
-    render() {
+	render() {
 
-        const { services, selectedService } = this.context
-        const service = selectedService ? services[selectedService] : null;;
+		const { services, selectedService } = this.context
+		const service = selectedService ? services[selectedService] : null;;
 
-        if( service === null ) {
-            return (
-                <SafeAreaProvider>
-                    <SafeAreaView style={styles.container}>
-                        <PaperText>
-                            サービスが選択されていません
-                        </PaperText>
-                    </SafeAreaView>
-                </SafeAreaProvider>
-            )
-        }
+		if (service === null) {
+			return (
+				<SafeAreaProvider>
+					<SafeAreaView style={styles.container}>
+						<PaperText>
+							サービスが選択されていません
+						</PaperText>
+					</SafeAreaView>
+				</SafeAreaProvider>
+			)
+		}
 
-        return (
-            <SafeAreaProvider>
-                <SafeAreaView style={styles.container}>
-                    <RNScrollView>
-                        <View style={styles.udpadding}>
-                            <PaperText variant="headlineMedium" >
-                                {service.clientName} ({service.addresses.join(', ')})
-                            </PaperText>
-                            <PaperText>
-                                このデバイスは{service.clientModel}です。
-                            </PaperText>
-                        </View>
-                        <PaperButton mode="contained-tonal" onPress={this.imagePicker}>
-                            画像を選択する
-                        </PaperButton>
-                        <View style={styles.udpadding}>
-                            {this.context.image && <AutoHeightImage source={{ uri: this.context.image }} width={350} />}
-                        </View>
-                        {this.context.image && <PaperButton mode="contained-tonal" onPress={() => this.sendImage(service)} disabled={ this.state.isSending }>{ this.state.isSending ? "送信中" : "送信する"}</PaperButton>}
-                    </RNScrollView>
-                </SafeAreaView>
-            </SafeAreaProvider>
-        );
-    }
+		return (
+			<SafeAreaProvider>
+				<SafeAreaView style={styles.container}>
+					<RNScrollView>
+						<View style={styles.udpadding}>
+							<PaperText variant="headlineMedium" >
+								{typeof service.clientName === "undefined" ? service.fullName.split('.')[0] : service.clientName} ({service.addresses.join(', ')})
+							</PaperText>
+							<PaperText>
+								このデバイスは{service.clientModel}です。
+							</PaperText>
+						</View>
+						<PaperButton mode="contained-tonal" onPress={this.imagePicker}>
+							画像を選択する
+						</PaperButton>
+						<View style={styles.udpadding}>
+							{this.context.image && <AutoHeightImage source={{ uri: this.context.image }} width={350} />}
+						</View>
+						{this.context.image && <PaperButton mode="contained-tonal" onPress={() => this.sendImage(service)} disabled={this.state.isSending}>{this.state.isSending ? "送信中" : "送信する"}</PaperButton>}
+					</RNScrollView>
+				</SafeAreaView>
+			</SafeAreaProvider>
+		);
+	}
 }
 
 const styles = StyleSheet.create({

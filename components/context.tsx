@@ -14,5 +14,6 @@ export const Context = React.createContext({
     senderData: {} as Ask | null,
     notification: {} as Notification | null,
     showsDetailDisplay : false,
+    recivedShards : [] as { from : string, shards : number, data: Buffer, uri: string }[],
     setObjectState: (state: Partial<InternalState>) => {}
 });

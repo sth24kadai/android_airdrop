@@ -19,7 +19,7 @@ import { Buffer } from 'buffer';
 import { BridgeServer } from 'react-native-http-bridge-refurbished'
 import DeviceInfo from 'react-native-device-info'
 
-import { RootStackParamList, InternalState, Notification, Ask, HTTPImageRequest, HTTPImageFrom } from './types'
+import { RootStackParamList, InternalState, Notification, Ask, HTTPImageRequest, HTTPImageFrom, HTTPBufferRequest } from './types'
 
 import { Context } from './components/context'
 
@@ -57,7 +57,8 @@ export default class App extends Component {
 			image: null,
 			senderData: {} as Ask,
 			notification: {} as Notification,
-			showsDetailDisplay: false
+			showsDetailDisplay: false,
+			recivedShards: [] as HTTPBufferRequest[]
 		}
 	}
 
@@ -102,11 +103,71 @@ export default class App extends Component {
 			} as Ask
 		})
 
+		httpbridge.post<string>("/upload/shard", async (request, response) => {
+			const raw = request.postData as string
+			const unZip = Gzip.unzip(raw)
+			const postJSONData = (JSON.parse(unZip)) as HTTPBufferRequest & { data : string }
+
+			const deviceInfomationfromHash = JSON.parse(
+				Buffer.from(postJSONData.from, "base64").toString("utf-8")
+			) as HTTPImageFrom
+			 
+			console.log(`Recieve : ${Buffer.from(postJSONData.uri.split(',').map( v => +v)).byteLength} byte`)
+
+			this.state.recivedShards.push({
+				from: postJSONData.from,
+				shardIndex: postJSONData.shardIndex,
+				data: Buffer.from(postJSONData.uri.split(',').map( v => +v)),
+				uri : "nullvalue",
+				totalShards: postJSONData.totalShards,
+				type : "base64-shards",
+				imgType : postJSONData.type,
+				status : "Shards"
+			})
+
+			console.log(`-----> Received ${postJSONData.shardIndex + 1} of ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`)
+
+			if( postJSONData.shardIndex === postJSONData.totalShards - 1 ){
+				console.log(Math.round(new Date().getTime() / 1000))
+
+				this.state.logs.push({
+					emoji: "📨",
+					message: `Received ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`
+				})
+				Notifier.showNotification({
+					title: 'シャードを受信し終わりました！',
+					description: `Received ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`
+				})
+
+				const shards = this.state.recivedShards.filter( (shard) => shard.from === postJSONData.from )
+				const data = Buffer.concat(
+					[...shards.sort((a,b) => a.shardIndex - b.shardIndex).map( (shard) => shard.data )],
+				)
+				console.log(`-----> Received ${data.byteLength} bytes of data from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`)
+				const toBase64URI = `data:image/png;base64,${data.toString("base64")}`
+
+				this.state.recivedShards = [];
+
+				this.state.recivedDatas.push({
+					from: postJSONData.from,
+					bytes: data.byteLength,
+					data: data,
+					uri : toBase64URI
+				})
+			}
+
+
+			return {
+				"status": "OK"
+			}
+		})
+
 		httpbridge.post<string>("/upload", async (request, response) => {
 			const raw = request.postData as string
-			console.log( raw )
 			const unZip = Gzip.unzip(raw)
 			const postJSONData = (JSON.parse(unZip)) as HTTPImageRequest
+
+			console.log(postJSONData)
 
 			const deviceInfomationfromHash = JSON.parse(
 				Buffer.from(postJSONData.from, "base64").toString("utf-8")

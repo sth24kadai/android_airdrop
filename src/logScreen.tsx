@@ -33,10 +33,11 @@ export default class LogScreen extends React.Component<NativeStackScreenProps<Ro
                                 <Text key={"k" + index} style={styles.json}>{log.message}</Text>
                             </View>
                         ))}
-                        <PaperButton icon="delete" mode='contained-tonal' onPress={() => this.context.setObjectState({ logs: [] })}>
+						<PaperButton icon="delete" mode='contained-tonal' onPress={() => this.context.setObjectState({ logs: [] })}>
                             ログをクリアする
-                        </PaperButton>
+                   		</PaperButton>
                     </RNScrollView>
+
                 </SafeAreaView>
             </SafeAreaProvider>
         )
@@ -44,6 +45,11 @@ export default class LogScreen extends React.Component<NativeStackScreenProps<Ro
 }
 
 const styles = StyleSheet.create({
+	bottomButtonFixed : {
+		position: 'absolute',
+		bottom: 0,
+		width: '100%'
+	},
 	udpadding: {
 		paddingTop: 10,
 		paddingBottom: 10
@@ -86,7 +92,8 @@ const styles = StyleSheet.create({
 	logs: {
 		padding: 3,
 		fontSize: 20,
-		fontWeight: "semibold"
+		fontWeight: "semibold",
+		height: "90%"
 	},
 	state: {
 		fontSize: 20,
