@@ -1,7 +1,7 @@
 import React from "react";
 import { Service } from "react-native-zeroconf";
 import { Ask } from "../types/airdrop.ask";
-import { InternalState, Notification } from "../types";
+import { HTTPBufferRequest, InternalState, Notification } from "../types";
 
 export const Context = React.createContext({
     isScanning: false,
@@ -14,6 +14,6 @@ export const Context = React.createContext({
     senderData: {} as Ask | null,
     notification: {} as Notification | null,
     showsDetailDisplay : false,
-    recivedShards : [] as { from : string, shards : number, data: Buffer, uri: string }[],
+    recivedShards : [] as HTTPBufferRequest[],
     setObjectState: (state: Partial<InternalState>) => {}
 });

@@ -105,7 +105,8 @@ export default class App extends Component {
 
 		httpbridge.post<string>("/upload/shard", async (request, response) => {
 			const raw = request.postData as string
-			const unZip = Gzip.unzip(raw)
+			const unZip = //Gzip.unzip(raw) -> issue : #4
+							raw
 			const postJSONData = (JSON.parse(unZip)) as HTTPBufferRequest & { data : string }
 
 			const deviceInfomationfromHash = JSON.parse(
@@ -262,64 +263,3 @@ export default class App extends Component {
 		)
 	}
 }
-
-//#region Styles
-
-const styles = StyleSheet.create({
-	udpadding: {
-		paddingTop: 10,
-		paddingBottom: 10
-	},
-	textWithIcon: {
-		display: 'flex',
-		flexDirection: 'row',
-		alignContent: 'center',
-		alignItems: 'center',
-		textAlign: 'center',
-		justifyContent: 'center',
-		gap: 10,
-		fontSize: 30
-	},
-	textWithIconSizeFree: {
-		padding: 10,
-		display: 'flex',
-		flexDirection: 'row',
-		alignContent: 'center',
-		alignItems: 'center',
-		textAlign: 'center',
-		justifyContent: 'center',
-		gap: 10,
-	},
-	container: {
-		flex: 1,
-		marginLeft: 10,
-		marginRight: 10,
-		marginBottom: 10,
-	},
-	closeButton: {
-		padding: 20,
-		textAlign: 'center',
-	},
-	json: {
-		padding: 6,
-		fontWeight: "bold",
-		fontSize: 15,
-	},
-	logs: {
-		padding: 3,
-		fontSize: 20,
-		fontWeight: "semibold"
-	},
-	state: {
-		fontSize: 20,
-		textAlign: 'center',
-		margin: 30,
-	},
-	flexLog: {
-		display: 'flex',
-		flexDirection: "row",
-		alignContent: "center"
-	}
-})
-
-//#endregion

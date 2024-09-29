@@ -96,8 +96,6 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 
 		if (response === undefined) return;
 
-		const fromData = await App.fromDeviceCreate()
-
 		if (response.ok) {
 			Notifier.showNotification({
 				title: '送信中です。',
@@ -146,6 +144,15 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 				})
 			}
 			*/
+			this.setState({ isSending: false })
+			Notifier.showNotification({
+				title: '送信完了',
+				description: `写真を送信しました。`,
+				duration: 5000,
+				showAnimationDuration: 800,
+				showEasing: Easing.ease,
+				hideEasing: Easing.ease,
+			})
 		} else {
 			this.context.logs.push({
 				emoji: '🚨',
@@ -157,7 +164,8 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 
 	public promisedZip(data: object): Promise<string> {
 		return new Promise((resolve) => {
-			resolve( Gzip.zip(JSON.stringify(data)) )
+			//resolve( Gzip.zip(JSON.stringify(data)) )
+			resolve( JSON.stringify(data) )
 			console.log(`resolve gzip ----> Shard #${data}`)
 		})
 	}
@@ -168,7 +176,6 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 		const shards = this.shardingManager(data, SHARD_BYTES)
 
 		console.log(`Shard #0 : ${shards[0].byteLength} bytes`)
-
 
 		this.context.logs.push({
 			emoji: '💎',
@@ -219,6 +226,15 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 						hideEasing: Easing.ease,
 					});
 
+					this.setState({ isSending: false })
+					Notifier.showNotification({
+						title: 'エラーが発生しました。',
+						description: `シャード(#${index})の送信に失敗しました。`,
+						duration: 5000,
+						showAnimationDuration: 800,
+						showEasing: Easing.ease,
+						hideEasing: Easing.ease,
+					})
 				}
 			})
 		)
