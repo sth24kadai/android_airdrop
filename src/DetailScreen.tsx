@@ -70,10 +70,10 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 
 		this.context.logs.push({
 			emoji: '📡',
-			message: `POST http://${service.host}:${this.AIRDROP_HTTP_PORT}/Ask`
+			message: `POST http://${service.host}:${this.AIRDROP_HTTP_PORT}/ask`
 		})
 
-		const response = await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/Ask`, {
+		const response = await fetch(`http://${service.host}:${this.AIRDROP_HTTP_PORT}/ask`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"

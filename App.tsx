@@ -44,6 +44,8 @@ export default class App extends Component {
 
 	private AIRDROP_HTTP_PORT = 8771
 
+	private __httpServer : BridgeServer | undefined;
+
 	constructor(props: any) {
 		super(props);
 
@@ -60,6 +62,8 @@ export default class App extends Component {
 			showsDetailDisplay: false,
 			recivedShards: [] as HTTPBufferRequest[]
 		}
+
+		this.__httpServer = void 0;
 	}
 
 	// #region HTTP Client Server
@@ -92,15 +96,35 @@ export default class App extends Component {
 
 		})
 
-		httpbridge.post<Ask>("/Ask", async (request, response) => {
+		httpbridge.post<Ask>("/ask", async (request, response) => {
 
 			const data = request.postData
 			this.state.senderData = data as Ask
 
 			return {
-				"ReceiverComputerName": "Google Pixel 6a",
-				"ReceiverModelName": "Pixel 6a"
-			} as Ask
+				"status": "OK",
+				"data": {
+					message : "wait for grand"
+				}
+			}
+		})
+
+		httpbridge.post("/ask/grand", async (request, response) => {
+			const data = JSON.parse(JSON.stringify(request.postData)) as { datahash : string, grand: boolean }
+			const grand = data.grand
+			const from = data.datahash
+
+			this.state.logs.push({
+				emoji: '🔑',
+				message: `Grand ${grand ? "🔓" : "🔒"} access to ${from}`
+			})
+
+			return {
+				"status": "OK",
+				"data": {
+					message : "granded"
+				}
+			}
 		})
 
 		httpbridge.post<string>("/upload/shard", async (request, response) => {
@@ -226,7 +250,11 @@ export default class App extends Component {
 	}
 
 	componentDidMount(): void {
-		this.httpServer()
+		this.__httpServer = this.httpServer()
+	}
+
+	componentWillUnmount(): void {
+		this.__httpServer instanceof BridgeServer && this.__httpServer.stop()
 	}
 
 	render(): React.ReactNode {
