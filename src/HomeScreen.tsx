@@ -288,7 +288,7 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 		}
 		this.context.setObjectState({ services: {} })
 
-		zeroconf.scan('FC9F5ED42C8A', 'tcp', undefined)
+		zeroconf.scan('FC9F5ED42C8A', 'tcp', 'local.')
 		this.context.logs.push({
 			emoji: '🔍♻️',
 			message: 'ReScanning for services...'
