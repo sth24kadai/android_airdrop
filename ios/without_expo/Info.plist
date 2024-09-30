@@ -48,5 +48,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_FC9F5ED42C8A._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string> for discover phone to phones</string>
 </dict>
 </plist>
