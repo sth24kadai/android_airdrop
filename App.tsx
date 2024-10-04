@@ -131,6 +131,7 @@ export default class App extends Component {
 			const raw = request.postData as string
 			const unZip = //Gzip.unzip(raw) -> issue : #4
 							raw
+			console.log(unZip);
 			const postJSONData = (JSON.parse(unZip)) as HTTPBufferRequest & { data : string }
 
 			const deviceInfomationfromHash = JSON.parse(
