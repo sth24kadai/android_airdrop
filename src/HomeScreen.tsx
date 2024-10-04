@@ -104,7 +104,7 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 	static random8BitArrayGenerate(): Uint8Array {
 		const randomStrings: number[] = [];
 
-		for (let i = 0; i < 3; i++) {
+		for (let i = 0; i < 6; i++) {
 			randomStrings.push(Math.floor(Math.random() * 256))
 		}
 

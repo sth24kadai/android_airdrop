@@ -131,6 +131,16 @@ export default class App extends Component {
 			const raw = request.postData as string
 			const unZip = //Gzip.unzip(raw) -> issue : #4
 							raw
+			if( typeof unZip === "undefined" ){
+				this.state.logs.push({
+					emoji: "📨",
+					message: `recived data is undefined`
+				})
+
+				return {
+					"status": "NG"
+				}
+			}
 			this.state.logs.push({
 				emoji: "📨",
 				message: `RAW : ${raw}`
