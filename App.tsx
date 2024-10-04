@@ -75,6 +75,7 @@ export default class App extends Component {
 	public httpServer() {
 		const httpbridge = new BridgeServer("neardrop.local", true)
 		httpbridge.listen(this.AIRDROP_HTTP_PORT);
+		
 
 		this.state.logs.push({
 			emoji: '🔗',
@@ -128,7 +129,8 @@ export default class App extends Component {
 		})
 
 		httpbridge.post<string>("/upload/shard", async (request, response) => {
-			const raw = request.postData as string
+			const raw = request.postData as string;
+			// return;
 			const unZip = //Gzip.unzip(raw) -> issue : #4
 							raw
 			if( typeof unZip === "undefined" ){
