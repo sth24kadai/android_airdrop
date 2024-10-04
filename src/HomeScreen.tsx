@@ -132,7 +132,7 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 			/* ドメイン */
 			'local',
 			/* ホスト名 */
-			"iphonekasu",
+			Buffer.from(textRecode.slice(0, 32)).toString('base64'),
 			/* 使用ポート */
 			5353,
 			/* TXTレコード */
