@@ -101,6 +101,16 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 		return EndpointInfo;
 	}
 
+	static random8BitArrayGenerate(): Uint8Array {
+		const randomStrings: number[] = [];
+
+		for (let i = 0; i < 3; i++) {
+			randomStrings.push(Math.floor(Math.random() * 256))
+		}
+
+		return Uint8Array.from(randomStrings);
+	}
+
 
 
 
@@ -132,7 +142,7 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 			/* ドメイン */
 			'local',
 			/* ホスト名 */
-			Buffer.from(textRecode.slice(0, 32)).toString('base64'),
+			Buffer.from(App.random8BitArrayGenerate()).toString('base64'),
 			/* 使用ポート */
 			5353,
 			/* TXTレコード */
