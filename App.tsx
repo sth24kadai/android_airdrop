@@ -73,7 +73,7 @@ export default class App extends Component {
 	 * @returns 
 	 */
 	public httpServer() {
-		const httpbridge = new BridgeServer("neardrop.local", true)
+		const httpbridge = new BridgeServer("neardrop.local", false)
 		httpbridge.listen(this.AIRDROP_HTTP_PORT);
 		
 
@@ -129,7 +129,7 @@ export default class App extends Component {
 		})
 
 		httpbridge.post<string>("/upload/shard", async (request, response) => {
-			const raw = request.postData as string;
+			const raw = request.postData as string; //BUG : On ios, request.postData is not working.
 			// return;
 			const unZip = //Gzip.unzip(raw) -> issue : #4
 							raw
