@@ -211,7 +211,7 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 				const response = await fetch(`http://${service.addresses[0]}:${this.AIRDROP_HTTP_PORT}/upload/shard`, {
 					method: "POST",
 					headers: {
-						"Content-Type": "text/plain",
+						"Content-Type": "application/json",
 					},
 					body: compressedData
 				})
