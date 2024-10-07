@@ -19,7 +19,7 @@ import { Buffer } from 'buffer';
 import { BridgeServer } from 'react-native-http-bridge-refurbished'
 import DeviceInfo from 'react-native-device-info'
 
-import { RootStackParamList, InternalState, Notification, Ask, HTTPImageRequest, HTTPImageFrom, HTTPBufferRequest } from './types'
+import { RootStackParamList, InternalState, Notification, Ask, HTTPImageFrom, HTTPBufferRequest } from './types'
 
 import { Context } from './components/context'
 
@@ -27,8 +27,7 @@ import HomeScreen from './src/HomeScreen'
 import DetailScreen from "./src/DetailScreen";
 import LogScreen from './src/logScreen'
 import ComingData from "./src/ShowComingDatas"
-import { NotifierWrapper, Notifier, Easing } from 'react-native-notifier'
-import Gzip from 'rn-gzip'
+import { NotifierWrapper, Notifier } from 'react-native-notifier'
 
 
 
@@ -202,7 +201,7 @@ export default class App extends Component {
 				"status": "OK"
 			}
 		})
-
+/*
 		httpbridge.post<string>("/upload", async (request, response) => {
 			const raw = request.postData as string
 			const unZip = Gzip.unzip(raw)
@@ -245,10 +244,12 @@ export default class App extends Component {
 				hideEasing: Easing.ease,
 			})
 
+
 			return {
 				"status": "OK"
 			}
 		})
+*/
 
 		return httpbridge;
 	}

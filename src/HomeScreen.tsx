@@ -150,11 +150,6 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 				n: Buffer.from(textRecode).toString('base64'),
 			}
 		)
-
-		console.log(
-			`EndpointInfo: ${Buffer.from(textRecode).toString("base64")}`
-		)
-
 		//#endregion
 		// #region mDNS Event Handlers
 

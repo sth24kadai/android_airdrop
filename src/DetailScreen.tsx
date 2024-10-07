@@ -17,7 +17,6 @@ import { HTTPImageFrom, HTTPImageRequest, RootStackParamList } from '../types';
 import { AutoHeightImage } from '../components/autosizedImage';
 import { Context } from '../components/context';
 import { Notifier } from 'react-native-notifier';
-import Gzip from 'rn-gzip';
 
 
 class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'DetailScreen'>> {
