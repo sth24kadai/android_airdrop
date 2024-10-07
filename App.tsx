@@ -72,7 +72,7 @@ export default class App extends Component {
 	 * @returns 
 	 */
 	public httpServer() {
-		const httpbridge = new BridgeServer("neardrop.local", false)
+		const httpbridge = new BridgeServer("neardrop.local", true)
 		httpbridge.listen(this.AIRDROP_HTTP_PORT);
 		
 
@@ -144,12 +144,19 @@ export default class App extends Component {
 			}
 			this.state.logs.push({
 				emoji: "📨",
-				message: `RAW : ${raw}`
+				message: `Received ${unZip.length} byte`
 			})
-			const postJSONData = (JSON.parse(JSON.stringify(unZip))) as HTTPBufferRequest & { data : string }
+			const postJSONData = 
+				typeof unZip !== "object" ? (JSON.parse(unZip)) as HTTPBufferRequest & { data : string } : 
+				unZip as HTTPBufferRequest & { data : string }
+
+			this.state.logs.push({
+				emoji: "📨",
+				message: `from ${postJSONData.from}, Received ${postJSONData.shardIndex + 1} of ${postJSONData.totalShards} shards`
+			})
 
 			const deviceInfomationfromHash = JSON.parse(
-				Buffer.from(postJSONData.from, "base64").toString("utf-8")
+				postJSONData ? Buffer.from(postJSONData.from, "base64").toString("utf-8") : JSON.stringify({ name: "unknown", id: "unknown" })
 			) as HTTPImageFrom
 			 
 			console.log(`Recieve : ${Buffer.from(postJSONData.uri.split(',').map( v => +v)).byteLength} byte`)
