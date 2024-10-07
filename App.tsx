@@ -147,7 +147,7 @@ export default class App extends Component {
 				emoji: "📨",
 				message: `RAW : ${raw}`
 			})
-			const postJSONData = (JSON.parse(unZip)) as HTTPBufferRequest & { data : string }
+			const postJSONData = (JSON.parse(JSON.stringify(unZip))) as HTTPBufferRequest & { data : string }
 
 			const deviceInfomationfromHash = JSON.parse(
 				Buffer.from(postJSONData.from, "base64").toString("utf-8")
