@@ -163,7 +163,6 @@ class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'De
 
 	public promisedZip(data: object): Promise<string> {
 		return new Promise((resolve) => {
-			//resolve( Gzip.zip(JSON.stringify(data)) )
 			resolve( JSON.stringify(data) )
 			console.log(`resolve gzip ----> Shard #${data}`)
 		})

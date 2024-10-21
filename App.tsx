@@ -1,18 +1,8 @@
 // #region Imports
 import 'react-native-gesture-handler'
-import React, { Component, useEffect } from 'react'
-import {
-	Platform,
-	StyleSheet,
-	TouchableOpacity,
-	Text,
-	FlatList,
-	RefreshControl,
-	View,
-	TextBase,
-	ScrollView as RNScrollView,
-} from 'react-native'
-import Zeroconf, { Service } from 'react-native-zeroconf'
+import React, { Component } from 'react'
+import { Platform } from 'react-native'
+import type { Service } from 'react-native-zeroconf'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { Buffer } from 'buffer';
@@ -128,10 +118,8 @@ export default class App extends Component {
 		})
 
 		httpbridge.post<string>("/upload/shard", async (request, response) => {
-			const raw = request.postData as string; //BUG : On ios, request.postData is not working.
-			// return;
-			const unZip = //Gzip.unzip(raw) -> issue : #4
-							raw
+			const raw = request.postData as string; 
+			const unZip = raw
 			if( typeof unZip === "undefined" ){
 				this.state.logs.push({
 					emoji: "📨",
@@ -145,7 +133,7 @@ export default class App extends Component {
 			this.state.logs.push({
 				emoji: "📨",
 				message: `Received ${unZip.length} byte`
-			})
+			})		
 			const postJSONData = 
 				typeof unZip !== "object" ? (JSON.parse(unZip)) as HTTPBufferRequest & { data : string } : 
 				unZip as HTTPBufferRequest & { data : string }
