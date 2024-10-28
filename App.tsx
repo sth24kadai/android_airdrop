@@ -184,7 +184,9 @@ export default class App extends Component {
 				console.log(`-----> Received ${data.byteLength} bytes of data from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`)
 				const toBase64URI = `data:image/png;base64,${data.toString("base64")}`
 
-				this.state.recivedShards = [];
+				this.state.recivedShards = this.state.recivedShards.filter(
+					v => v.from !== postJSONData.from
+				)
 
 				this.state.recivedDatas.push({
 					from: postJSONData.from,
