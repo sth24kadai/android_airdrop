@@ -14,7 +14,7 @@ import { RootStackParamList, InternalState, Notification, Ask, HTTPImageFrom, HT
 import { Context } from './components/context'
 
 import HomeScreen from './src/HomeScreen'
-import DetailScreen from "./src/DetailScreen";
+import DetailScreen from "./src/DetailScreen.new";
 import LogScreen from './src/logScreen'
 import ComingData from "./src/ShowComingDatas"
 import { NotifierWrapper, Notifier } from 'react-native-notifier'
@@ -162,7 +162,7 @@ export default class App extends Component {
 
 			console.log(`-----> Received ${postJSONData.shardIndex + 1} of ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`)
 
-			if( postJSONData.shardIndex === postJSONData.totalShards - 1 ){
+			if( this.state.recivedShards.length === postJSONData.totalShards ){
 				console.log(Math.round(new Date().getTime() / 1000))
 
 				this.state.logs.push({
@@ -196,55 +196,6 @@ export default class App extends Component {
 				"status": "OK"
 			}
 		})
-/*
-		httpbridge.post<string>("/upload", async (request, response) => {
-			const raw = request.postData as string
-			const unZip = Gzip.unzip(raw)
-			const postJSONData = (JSON.parse(unZip)) as HTTPImageRequest
-
-			console.log(postJSONData)
-
-			const deviceInfomationfromHash = JSON.parse(
-				Buffer.from(postJSONData.from, "base64").toString("utf-8")
-			) as HTTPImageFrom
-
-			const data = Buffer.from(postJSONData.uri.split(",")[1], "base64")
-			this.state.logs.push({
-				emoji: "⚠️",
-				message: `Received ${data.byteLength} bytes of data from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`
-			})
-			this.state.logs.push({
-				emoji: '📨',
-				message: `Received ${data.byteLength} bytes of data`
-			})
-
-			this.state.notification = {
-				emoji: '📨',
-				message: `Received ${data.byteLength} bytes of data`
-			}
-
-			this.state.recivedDatas.push({
-				from: postJSONData.from,
-				bytes: data.byteLength,
-				data: data,
-				uri : postJSONData.uri
-			})
-
-			Notifier.showNotification({
-				title: 'データを受信しました',
-				description: `データを${data.byteLength}バイト受信しました`,
-				duration: 5000,
-				showAnimationDuration: 800,
-				showEasing: Easing.ease,
-				hideEasing: Easing.ease,
-			})
-
-
-			return {
-				"status": "OK"
-			}
-		})
-*/
 
 		return httpbridge;
 	}

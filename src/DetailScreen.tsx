@@ -1,3 +1,17 @@
+/**
+ * 
+ * 
+ * WARNING!
+ * 
+ * このファイルはすべて DetailScreen.newにより書き換えられました！
+ * 
+ * よってこのファイルは未使用です！しかし、一応のことを考えて残してはあります！！！
+ * 
+ * ですが！！！！これを参考にしてポスター等を書かないようご注意願います！！！！！！！！！！！！！
+ * 
+ * 
+ * 
+ */
 import React, { ComponentClass } from 'react';
 import { Platform, StyleSheet, Text, View, ScrollView as RNScrollView, Easing, } from 'react-native';
 
