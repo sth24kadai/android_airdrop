@@ -35,7 +35,7 @@ export default class DetailScreen extends Component<
      * Context
      */
     static contextType : typeof Context = Context
-    //@ts-ignore
+	//@ts-ignore - エラー回避の方法が思いつかない。抽象にしても宣言にしてもすべてエラーではじかれるから萎えた。
     context !: ContextType< typeof Context >
     
     public readonly HTTP_PORT : number = 8771
@@ -204,6 +204,7 @@ export default class DetailScreen extends Component<
             return (
                 <SafeAreaProvider>
                     <SafeAreaView>
+                        <PaperText> このメッセージは実はおかしい。</PaperText>
                         <PaperText> サービスが選択されていません </PaperText>
                     </SafeAreaView>
                 </SafeAreaProvider>

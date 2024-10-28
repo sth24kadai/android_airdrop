@@ -36,7 +36,7 @@ import { Notifier } from 'react-native-notifier';
 class App extends React.Component<NativeStackScreenProps<RootStackParamList, 'DetailScreen'>> {
 
 	static contextType = Context;
-	//@ts-ignore
+	//@ts-ignore - エラー回避の方法が思いつかない。抽象にしても宣言にしてもすべてエラーではじかれるから萎えた。
 	context!: React.ContextType<typeof Context>
 
 	public AIRDROP_HTTP_PORT = 8771

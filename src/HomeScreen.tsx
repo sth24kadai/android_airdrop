@@ -23,6 +23,8 @@ import { NativeStackScreenProps } from "react-native-screens/lib/typescript/nati
 
 import { RootStackParamList } from '../types';
 import { Context } from '../components/context';
+import DeviceInfo from 'react-native-device-info';
+import { NetworkInfo } from 'react-native-network-info';
 // #endregion
 
 
@@ -35,6 +37,10 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 	static contextType = Context;
 	//@ts-ignore
 	context!: React.ContextType<typeof Context>
+	
+	public state = {
+		ip : null
+	}
 	/**
 	 * Zeroconfのインターバルハンドラ変数	
 	 */
@@ -128,6 +134,11 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 		/* データを初期フェッチ */
 		this.refreshData()
 
+		NetworkInfo.getIPV4Address().then(v => {
+			this.setState({
+				ip : v
+			})
+		})
 		/**
 		 * mDNSのTXTレコード
 		 */
@@ -312,6 +323,7 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 			<SafeAreaProvider>
 				<SafeAreaView style={styles.container}>
 					<Text style={styles.title}> NearDrop </Text>
+					<Text style={styles.titleButSmall}> あなたのIP : {this.state.ip ?? ""}</Text>
 					<View style={styles.flexColumn}>
 						<Text style={styles.udpadding}>検出されたデバイス一覧</Text>
 						{

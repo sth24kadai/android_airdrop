@@ -171,7 +171,10 @@ export default class App extends Component {
 				})
 				Notifier.showNotification({
 					title: 'シャードを受信し終わりました！',
-					description: `Received ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`
+					description: `Received ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`,
+					onPress: () => {
+						//naviga.navigate("写真の保存")
+					}
 				})
 
 				const shards = this.state.recivedShards.filter( (shard) => shard.from === postJSONData.from )
