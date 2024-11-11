@@ -180,6 +180,17 @@ export default class DetailScreen extends Component<
 						hideEasing: Easing.ease,
 					})
 				}
+
+                if( toStringedDatas.length === index + 1 ) {
+                    showNotification({
+                        title : "送信が完了しました。",
+                        description : `シャード個数 ${toStringedDatas.length } shards, トータル ${Math.round( ( rawData.byteLength / 1024 / 1024 )* 10 ) / 10 } MB`
+                    })
+                    this.context.setObjectState({
+                        image : null
+                    })
+                    this.props.navigation.navigate('デバイスの選択')
+                }
             })
         )
     }
@@ -217,7 +228,7 @@ export default class DetailScreen extends Component<
                     <RNScrollView>
                         <View style={ styles.udpadding}>
                             <PaperText variant="headlineMedium">
-                                {typeof service.clientName === "undefined" ? service.fullName.split('.')[0] : service.clientName} ({service.addresses.join(', ')})
+                                {typeof service?.clientName === "undefined" ? service.fullName.split('.')[0] : service.clientName} ({service.addresses.join(', ')})
                             </PaperText>
                         </View>
                         <Button mode="contained-tonal" onPress={(e) => this.selectImage(e)}>

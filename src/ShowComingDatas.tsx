@@ -2,7 +2,7 @@ import { Component } from "react";
 import { NativeStackScreenProps } from "react-native-screens/lib/typescript/native-stack/types";
 import { RootStackParamList } from "../types";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { Image, StyleSheet, View } from "react-native"
+import { Image, ScrollView, StyleSheet, View } from "react-native"
 import { Context } from "../components/context";
 import { Buffer } from 'buffer';
 import { Button, Text } from "react-native-paper";
@@ -70,19 +70,21 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
         return (
             <SafeAreaProvider>
                 <SafeAreaView style={styles.baseFlexStyle}>
-                    {
-                        this.getBase64URI() !== "" ? (
-                            <View style={styles.containText}>
-                                <Text>直近で送られたファイル</Text>
-                                <AutoHeightImage style={styles.noImageText} source={{ uri: this.getBase64URI() }} width={350} />
-                                <Button icon="download" mode="contained" onPress={() => this.saveImage()}>
-                                    保存する
-                                </Button>
-                            </View>
-                        ) : (
-                            <Text style={styles.noImageText}>最近シェアされた写真はまだないようです。</Text>
-                        )
-                    }
+                    <ScrollView>
+                        {
+                            this.getBase64URI() !== "" ? (
+                                <View style={styles.containText}>
+                                    <Text>直近で送られたファイル</Text>
+                                    <AutoHeightImage style={styles.noImageText} source={{ uri: this.getBase64URI() }} width={350} />
+                                    <Button icon="download" mode="contained" onPress={() => this.saveImage()}>
+                                        保存する
+                                    </Button>
+                                </View>
+                            ) : (
+                                <Text style={styles.noImageText}>最近シェアされた写真はまだないようです。</Text>
+                            )
+                        }
+                    </ScrollView>
                 </SafeAreaView>
             </SafeAreaProvider>
         )

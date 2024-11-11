@@ -13,7 +13,7 @@ import { RootStackParamList, InternalState, Notification, Ask, HTTPImageFrom, HT
 
 import { Context } from './components/context'
 
-import HomeScreen from './src/HomeScreen'
+import HomeScreen from './src/HomeScreen.new'
 import DetailScreen from "./src/DetailScreen.new";
 import LogScreen from './src/logScreen'
 import ComingData from "./src/ShowComingDatas"
