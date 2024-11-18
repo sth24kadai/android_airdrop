@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -17,6 +17,7 @@
 		A8819FB8E0497829FF9BF56E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2CC9AD5757C9A5D34FD9D03D /* PrivacyInfo.xcprivacy */; };
 		DC4DEFAD2CEACCA40005114D /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC53DBF22CE18D4200154DF3 /* WidgetKit.framework */; };
 		DC4DEFAE2CEACCA40005114D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC53DBF42CE18D4200154DF3 /* SwiftUI.framework */; };
+		DC4DEFD12CEAD5350005114D /* LQU-shre.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DC4DEFC72CEAD5350005114D /* LQU-shre.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DC53DBF32CE18D4200154DF3 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC53DBF22CE18D4200154DF3 /* WidgetKit.framework */; };
 		DC53DBF52CE18D4200154DF3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC53DBF42CE18D4200154DF3 /* SwiftUI.framework */; };
 		DC53DC062CE18D4500154DF3 /* LQUExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DC53DBF12CE18D4200154DF3 /* LQUExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -37,6 +38,13 @@
 			remoteGlobalIDString = DC4DEFAB2CEACCA40005114D;
 			remoteInfo = LQUExtension;
 		};
+		DC4DEFCF2CEAD5350005114D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DC4DEFC62CEAD5350005114D;
+			remoteInfo = "LQU-shre";
+		};
 		DC53DC042CE18D4500154DF3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
@@ -54,6 +62,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				DC53DC062CE18D4500154DF3 /* LQUExtension.appex in Embed Foundation Extensions */,
+				DC4DEFD12CEAD5350005114D /* LQU-shre.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -80,6 +89,7 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = without_expo/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		89C6BE57DB24E9ADA2F236DE /* Pods-without_expo-without_expoTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-without_expo-without_expoTests.release.xcconfig"; path = "Target Support Files/Pods-without_expo-without_expoTests/Pods-without_expo-without_expoTests.release.xcconfig"; sourceTree = "<group>"; };
 		DC4DEFAC2CEACCA40005114D /* LQUExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LQUExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC4DEFC72CEAD5350005114D /* LQU-shre.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "LQU-shre.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC53DBF12CE18D4200154DF3 /* LQUExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LQUExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC53DBF22CE18D4200154DF3 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		DC53DBF42CE18D4200154DF3 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -94,10 +104,18 @@
 			);
 			target = DC4DEFAB2CEACCA40005114D /* LQUExtension */;
 		};
+		DC4DEFD22CEAD5350005114D /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DC4DEFC62CEAD5350005114D /* LQU-shre */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DC4DEFAF2CEACCA40005114D /* LQU */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (DC4DEFBF2CEACCA50005114D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = LQU; sourceTree = "<group>"; };
+		DC4DEFC82CEAD5350005114D /* LQU-shre */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (DC4DEFD22CEAD5350005114D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = "LQU-shre"; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +141,13 @@
 			files = (
 				DC4DEFAE2CEACCA40005114D /* SwiftUI.framework in Frameworks */,
 				DC4DEFAD2CEACCA40005114D /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DC4DEFC42CEAD5350005114D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -196,6 +221,7 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* without_expoTests */,
 				DC4DEFAF2CEACCA40005114D /* LQU */,
+				DC4DEFC82CEAD5350005114D /* LQU-shre */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
@@ -212,6 +238,7 @@
 				00E356EE1AD99517003FC87E /* without_expoTests.xctest */,
 				DC53DBF12CE18D4200154DF3 /* LQUExtension.appex */,
 				DC4DEFAC2CEACCA40005114D /* LQUExtension.appex */,
+				DC4DEFC72CEAD5350005114D /* LQU-shre.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -269,6 +296,7 @@
 			dependencies = (
 				DC53DC052CE18D4500154DF3 /* PBXTargetDependency */,
 				DC4DEFBE2CEACCA50005114D /* PBXTargetDependency */,
+				DC4DEFD02CEAD5350005114D /* PBXTargetDependency */,
 			);
 			name = without_expo;
 			productName = without_expo;
@@ -295,6 +323,28 @@
 			);
 			productName = LQUExtension;
 			productReference = DC4DEFAC2CEACCA40005114D /* LQUExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		DC4DEFC62CEAD5350005114D /* LQU-shre */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DC4DEFD32CEAD5350005114D /* Build configuration list for PBXNativeTarget "LQU-shre" */;
+			buildPhases = (
+				DC4DEFC32CEAD5350005114D /* Sources */,
+				DC4DEFC42CEAD5350005114D /* Frameworks */,
+				DC4DEFC52CEAD5350005114D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				DC4DEFC82CEAD5350005114D /* LQU-shre */,
+			);
+			name = "LQU-shre";
+			packageProductDependencies = (
+			);
+			productName = "LQU-shre";
+			productReference = DC4DEFC72CEAD5350005114D /* LQU-shre.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 		DC53DBF02CE18D4200154DF3 /* LQUExtension */ = {
@@ -335,6 +385,9 @@
 					DC4DEFAB2CEACCA40005114D = {
 						CreatedOnToolsVersion = 16.1;
 					};
+					DC4DEFC62CEAD5350005114D = {
+						CreatedOnToolsVersion = 16.1;
+					};
 					DC53DBF02CE18D4200154DF3 = {
 						CreatedOnToolsVersion = 16.1;
 					};
@@ -357,6 +410,7 @@
 				00E356ED1AD99517003FC87E /* without_expoTests */,
 				DC53DBF02CE18D4200154DF3 /* LQUExtension */,
 				DC4DEFAB2CEACCA40005114D /* LQUExtension */,
+				DC4DEFC62CEAD5350005114D /* LQU-shre */,
 			);
 		};
 /* End PBXProject section */
@@ -380,6 +434,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		DC4DEFAA2CEACCA40005114D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DC4DEFC52CEAD5350005114D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -551,6 +612,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DC4DEFC32CEAD5350005114D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DC53DBED2CE18D4200154DF3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -570,6 +638,11 @@
 			isa = PBXTargetDependency;
 			target = DC4DEFAB2CEACCA40005114D /* LQUExtension */;
 			targetProxy = DC4DEFBD2CEACCA50005114D /* PBXContainerItemProxy */;
+		};
+		DC4DEFD02CEAD5350005114D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DC4DEFC62CEAD5350005114D /* LQU-shre */;
+			targetProxy = DC4DEFCF2CEAD5350005114D /* PBXContainerItemProxy */;
 		};
 		DC53DC052CE18D4500154DF3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -926,6 +999,87 @@
 			};
 			name = Release;
 		};
+		DC4DEFD42CEAD5350005114D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 28572R4TFM;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "LQU-shre/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "LQU-shre";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.without-expo.LQU-shre";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		DC4DEFD52CEAD5350005114D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 28572R4TFM;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "LQU-shre/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "LQU-shre";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.without-expo.LQU-shre";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		DC53DC082CE18D4500154DF3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1046,6 +1200,15 @@
 			buildConfigurations = (
 				DC4DEFC12CEACCA50005114D /* Debug */,
 				DC4DEFC22CEACCA50005114D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DC4DEFD32CEAD5350005114D /* Build configuration list for PBXNativeTarget "LQU-shre" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DC4DEFD42CEAD5350005114D /* Debug */,
+				DC4DEFD52CEAD5350005114D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
