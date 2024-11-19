@@ -4,10 +4,12 @@
 //
 //  Created by YO AK on 2024/11/18.
 //
-
+//ウィジェットキットとSwift　UIのimport
 import WidgetKit
 import SwiftUI
 
+//ウィジェットがどのようにデータを取得し、表示するかを制御する重要な部分
+//ウィジェットの更新頻度や表示するデータの内容をここで設定
 struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry(date: Date(), configuration: ConfigurationAppIntent())
