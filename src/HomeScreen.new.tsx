@@ -25,6 +25,7 @@ import { RootStackParamList } from '../types';
 import { Context } from '../components/context';
 import { NetworkInfo } from 'react-native-network-info';
 import { Notifier } from 'react-native-notifier';
+import nfcManager, { Ndef, NfcTech } from 'react-native-nfc-manager';
 
 /**
  * Zeroconfインスタンスを生成
@@ -159,7 +160,7 @@ export default class HomeScreen extends Component<
                 })
             }
 
-            if( deviceName === null ) return;
+            if (deviceName === null) return;
 
             const newService = Object.assign(service, deviceName !== null ? deviceName.data : {}) as Service & { clientName: string, clientModel: string }
 
@@ -180,6 +181,32 @@ export default class HomeScreen extends Component<
             })
         })
     }
+
+    public async nfcRequest() {
+        await nfcManager.cancelTechnologyRequest().catch(() => 0)
+        try {
+            await nfcManager.requestTechnology([NfcTech.Ndef], {
+                alertMessage: "ファイルを送信する端末をNFCタグに近づけてください"
+            })
+            await nfcManager.getTag()
+            const bytes = Ndef.encodeMessage([Ndef.uriRecord(`nd:${this.state.ip}`)]);
+
+            if (bytes) {
+                await nfcManager.ndefHandler.writeNdefMessage(bytes);
+                //const message = await nfcManager.ndefHandler.getNdefMessage()
+				//console.log("NFC Message", message)
+                console.log("Wrote ndef message", bytes)
+                await nfcManager.close().catch(() => 0)
+            }
+        } catch (err) {
+            nfcManager.cancelTechnologyRequest().catch(() => 0)
+            console.log(err)
+        } finally {
+            nfcManager.cancelTechnologyRequest().catch(() => 0)
+            console.log("NFC Request Done")
+        }
+    }
+
 
     private renderRow({ item, index }: { item: string, index: number }) {
         const { name, fullName, host, addresses, clientModel, clientName } = this.context.services[item];
@@ -223,6 +250,12 @@ export default class HomeScreen extends Component<
 
     componentDidMount() {
         this.refreshData()
+        nfcManager.isSupported().then(supported => {
+            if (supported) {
+                nfcManager.start()
+                console.log("NFC is supported, start")
+            }
+        })
         this.mDNSEventHandlers()
         NetworkInfo.getIPV4Address().then(v => {
             this.setState({
@@ -257,7 +290,7 @@ export default class HomeScreen extends Component<
                                 <>
                                     <FlatList
                                         data={Object.keys(services)}
-                                        renderItem={(item) => this.renderRow( item )}
+                                        renderItem={(item) => this.renderRow(item)}
                                         keyExtractor={key => key}
                                         refreshControl={
                                             <RefreshControl
@@ -282,6 +315,9 @@ export default class HomeScreen extends Component<
                                 </PaperButton>
                                 <PaperButton icon="archive" mode='contained-tonal' onPress={() => this.props.navigation.navigate('LogScreen')}>
                                     デバックログを確認する
+                                </PaperButton>
+                                <PaperButton icon="nfc" mode='contained-tonal' onPress={() => this.nfcRequest()}>
+                                    NFCでファイルを送信する
                                 </PaperButton>
                             </View>
                         )}

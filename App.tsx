@@ -18,6 +18,8 @@ import DetailScreen from "./src/DetailScreen.new";
 import LogScreen from './src/logScreen'
 import ComingData from "./src/ShowComingDatas"
 import { NotifierWrapper, Notifier } from 'react-native-notifier'
+import nfcManager, { Ndef, NfcEvents, NfcManager, NfcTech, OnNfcEvents } from 'react-native-nfc-manager'
+import { NetworkInfo } from 'react-native-network-info'
 
 
 
@@ -29,11 +31,13 @@ const Stack = createStackNavigator<RootStackParamList>()
  */
 export default class App extends Component {
 
-	public state: InternalState
+	public state: InternalState & {
+		ip: string
+	}
 
 	private AIRDROP_HTTP_PORT = 8771
 
-	private __httpServer : BridgeServer | undefined;
+	private __httpServer: BridgeServer | undefined;
 
 	constructor(props: any) {
 		super(props);
@@ -42,18 +46,54 @@ export default class App extends Component {
 			isScanning: false,
 			selectedService: null,
 			services: {} as { [key: string]: Service & { clientName: string, clientModel: string } },
-			recivedDatas: [] as { from: string, bytes: number, data: Buffer, uri : string }[],
+			recivedDatas: [] as { from: string, bytes: number, data: Buffer, uri: string }[],
 			logs: [],
 			showLogs: false,
 			image: null,
 			notification: {} as Notification,
 			showsDetailDisplay: false,
-			recivedShards: [] as HTTPBufferRequest[]
+			recivedShards: [] as HTTPBufferRequest[],
+			ip: ""
 		}
 
 		this.__httpServer = void 0;
 	}
 
+	public async startNFC() {
+		// NFCをスタートする
+		if (!nfcManager.isSupported()) return;
+		nfcManager.start();
+		await nfcManager.requestTechnology(
+			[ NfcTech.Ndef],
+			{
+				alertMessage: "Ready to read NDEF message"
+			}
+		);
+		const pages = await nfcManager.getTag(); 
+		console.log(pages);
+
+
+		if (Platform.OS === 'android') {
+			nfcManager.setEventListener(
+				NfcEvents.StateChanged,
+				() => {
+					nfcManager.cancelTechnologyRequest().catch(() => 0);
+				},
+			);
+		}
+
+		/**
+		 * 
+		 */
+
+
+		await nfcManager.registerTagEvent().catch(
+			(err) => {
+				console.log("registerTagEvent error", err)
+				nfcManager.unregisterTagEvent().catch(() => { })
+			}
+		)
+	}
 	// #region HTTP Client Server
 	/**
 	 * HTTPサーバーを起動します。
@@ -63,10 +103,10 @@ export default class App extends Component {
 	public httpServer() {
 		// 既存のサーバーが起動していたら停止させる
 		BridgeServer.server instanceof BridgeServer && BridgeServer.server.stop();
-		
+
 		const httpbridge = new BridgeServer("neardrop.local")
 		httpbridge.listen(this.AIRDROP_HTTP_PORT);
-		
+
 
 		this.state.logs.push({
 			emoji: '🔗',
@@ -93,13 +133,13 @@ export default class App extends Component {
 			return {
 				"status": "OK",
 				"data": {
-					message : "wait for grand"
+					message: "wait for grand"
 				}
 			}
 		})
 
 		httpbridge.post("/ask/grand", async (request, response) => {
-			const data = JSON.parse(JSON.stringify(request.postData)) as { datahash : string, grand: boolean }
+			const data = JSON.parse(JSON.stringify(request.postData)) as { datahash: string, grand: boolean }
 			const grand = data.grand
 			const from = data.datahash
 
@@ -111,15 +151,15 @@ export default class App extends Component {
 			return {
 				"status": "OK",
 				"data": {
-					message : "granded"
+					message: "granded"
 				}
 			}
 		})
 
 		httpbridge.post<string>("/upload/shard", async (request, response) => {
-			const raw = request.postData as string; 
+			const raw = request.postData as string;
 			const unZip = raw
-			if( typeof unZip === "undefined" ){
+			if (typeof unZip === "undefined") {
 				this.state.logs.push({
 					emoji: "📨",
 					message: `recived data is undefined`
@@ -132,10 +172,10 @@ export default class App extends Component {
 			this.state.logs.push({
 				emoji: "📨",
 				message: `Received ${unZip.length} byte`
-			})		
-			const postJSONData = 
-				typeof unZip !== "object" ? (JSON.parse(unZip)) as HTTPBufferRequest & { data : string } : 
-				unZip as HTTPBufferRequest & { data : string }
+			})
+			const postJSONData =
+				typeof unZip !== "object" ? (JSON.parse(unZip)) as HTTPBufferRequest & { data: string } :
+					unZip as HTTPBufferRequest & { data: string }
 
 			this.state.logs.push({
 				emoji: "📨",
@@ -145,23 +185,23 @@ export default class App extends Component {
 			const deviceInfomationfromHash = JSON.parse(
 				postJSONData ? Buffer.from(postJSONData.from, "base64").toString("utf-8") : JSON.stringify({ name: "unknown", id: "unknown" })
 			) as HTTPImageFrom
-			 
-			console.log(`Recieve : ${Buffer.from(postJSONData.uri.split(',').map( v => +v)).byteLength} byte`)
+
+			console.log(`Recieve : ${Buffer.from(postJSONData.uri.split(',').map(v => +v)).byteLength} byte`)
 
 			this.state.recivedShards.push({
 				from: postJSONData.from,
 				shardIndex: postJSONData.shardIndex,
-				data: Buffer.from(postJSONData.uri.split(',').map( v => +v)),
-				uri : "nullvalue",
+				data: Buffer.from(postJSONData.uri.split(',').map(v => +v)),
+				uri: "nullvalue",
 				totalShards: postJSONData.totalShards,
-				type : "base64-shards",
-				imgType : postJSONData.type,
-				status : "Shards"
+				type: "base64-shards",
+				imgType: postJSONData.type,
+				status: "Shards"
 			})
 
 			console.log(`-----> Received ${postJSONData.shardIndex + 1} of ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`)
 
-			if( this.state.recivedShards.length === postJSONData.totalShards ){
+			if (this.state.recivedShards.length === postJSONData.totalShards) {
 				console.log(Math.round(new Date().getTime() / 1000))
 
 				this.state.logs.push({
@@ -176,9 +216,9 @@ export default class App extends Component {
 					}
 				})
 
-				const shards = this.state.recivedShards.filter( (shard) => shard.from === postJSONData.from )
+				const shards = this.state.recivedShards.filter((shard) => shard.from === postJSONData.from)
 				const data = Buffer.concat(
-					[...shards.sort((a,b) => a.shardIndex - b.shardIndex).map( (shard) => shard.data )],
+					[...shards.sort((a, b) => a.shardIndex - b.shardIndex).map((shard) => shard.data)],
 				)
 				console.log(`-----> Received ${data.byteLength} bytes of data from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`)
 				const toBase64URI = `data:image/png;base64,${data.toString("base64")}`
@@ -191,7 +231,7 @@ export default class App extends Component {
 					from: postJSONData.from,
 					bytes: data.byteLength,
 					data: data,
-					uri : toBase64URI
+					uri: toBase64URI
 				})
 			}
 
@@ -213,7 +253,7 @@ export default class App extends Component {
 	 * 
 	 * @final
 	 */
-	setObjectState = (state: Partial<InternalState>) => { 
+	setObjectState = (state: Partial<InternalState>) => {
 		this.setState({
 			...state
 		})
@@ -221,9 +261,22 @@ export default class App extends Component {
 
 	componentDidMount(): void {
 		this.__httpServer = this.httpServer()
+		this.startNFC()
+		NetworkInfo.getIPV4Address().then(v => {
+			this.setState({
+				ip: v
+			}) // 自身の追跡用にIPを決定させておく
+		})
 	}
 
 	componentWillUnmount(): void {
+		nfcManager.setEventListener(NfcEvents.DiscoverTag, null)
+		nfcManager.setEventListener(NfcEvents.DiscoverBackgroundTag, null)
+		nfcManager.unregisterTagEvent().catch(() => { });
+		nfcManager.cancelTechnologyRequest().catch(() => { });
+		if (Platform.OS === "ios") {
+
+		}
 		this.__httpServer instanceof BridgeServer && this.__httpServer.stop()
 	}
 

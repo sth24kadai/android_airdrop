@@ -23,6 +23,8 @@ import { ImageLibraryOptions, launchImageLibrary } from 'react-native-image-pick
 import { Notifier } from 'react-native-notifier'
 import { AutoHeightImage } from '../components/autosizedImage'
 import { Buffer } from 'buffer';
+import nfcManager, { Ndef, NfcTech } from 'react-native-nfc-manager'
+import { NetworkInfo } from 'react-native-network-info'
 
 const {
     showNotification
@@ -42,7 +44,16 @@ export default class DetailScreen extends Component<
     public readonly BYTES : number = 32768 * 2 // 64KB
     public state = {
         isSending : false,
-        startTime : 0
+        startTime : 0,
+        ip : ""
+    }
+
+    componentDidMount(): void {
+        NetworkInfo.getIPV4Address().then(v => {
+			this.setState({
+				ip: v
+			}) // 自身の追跡用にIPを決定させておく
+		})
     }
 
     public static async fromDeviceCreate() : Promise< HTTPImageFrom > {
