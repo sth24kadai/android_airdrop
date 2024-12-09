@@ -20,6 +20,7 @@ import ComingData from "./src/ShowComingDatas"
 import { NotifierWrapper, Notifier } from 'react-native-notifier'
 import nfcManager, { Ndef, NfcEvents, NfcManager, NfcTech, OnNfcEvents } from 'react-native-nfc-manager'
 import { NetworkInfo } from 'react-native-network-info'
+import NFCWaitingScreen from './src/NFCWaitingScreen'
 
 
 
@@ -61,10 +62,11 @@ export default class App extends Component {
 
 	public async startNFC() {
 		// NFCをスタートする
+		nfcManager.close();
 		if (!nfcManager.isSupported()) return;
 		nfcManager.start();
 		await nfcManager.requestTechnology(
-			[ NfcTech.Ndef],
+			[ NfcTech.Ndef ],
 			{
 				alertMessage: "Ready to read NDEF message"
 			}
@@ -294,6 +296,10 @@ export default class App extends Component {
 							<Stack.Screen
 								name="デバイスの選択"
 								component={HomeScreen}
+							/>
+							<Stack.Screen
+								name="NFCWait"
+								component={NFCWaitingScreen}
 							/>
 							<Stack.Screen
 								name="DetailScreen"

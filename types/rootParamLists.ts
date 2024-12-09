@@ -9,4 +9,5 @@ export type RootStackParamList = {
     DetailScreen: undefined;
     LogScreen: undefined;
     写真の保存: undefined;
+    NFCWait: undefined;
 };
