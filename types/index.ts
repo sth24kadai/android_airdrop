@@ -1,6 +1,5 @@
 import { Platform } from "react-native"
 import { Service } from "react-native-zeroconf"
-import { Ask } from "./airdrop.ask"
 
 export interface InternalState {
 	isScanning: boolean
@@ -12,7 +11,6 @@ export interface InternalState {
 	}[],
 	showLogs: boolean,
 	image: string | null,
-	senderData: Ask | null,
 	notification: Notification | null
 	showsDetailDisplay : boolean 
 	recivedDatas : { from : string, bytes : number, data : Buffer, uri: string }[]
@@ -47,5 +45,4 @@ export interface HTTPImageFrom {
 	model : typeof Platform.OS
 }
 
-export type { Ask } from './airdrop.ask'
 export type { RootStackParamList } from './rootParamLists'

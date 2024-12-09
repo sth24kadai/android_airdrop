@@ -1,6 +1,5 @@
 import React from "react";
 import { Service } from "react-native-zeroconf";
-import { Ask } from "../types/airdrop.ask";
 import { HTTPBufferRequest, InternalState, Notification } from "../types";
 
 export const Context = React.createContext({
@@ -11,7 +10,6 @@ export const Context = React.createContext({
     logs: [] as { emoji: string, message: string }[],
     showLogs: false,
     image: "" as string | null,
-    senderData: {} as Ask | null,
     notification: {} as Notification | null,
     showsDetailDisplay : false,
     recivedShards : [] as HTTPBufferRequest[],

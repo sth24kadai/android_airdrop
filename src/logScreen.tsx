@@ -23,11 +23,8 @@ export default class LogScreen extends React.Component<NativeStackScreenProps<Ro
         return (
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container}>
-                    {/*
-                    <ApplicationBar closeMenuFunction={() => this.context.setObjectState({ showLogs: false })} customTitle='デバックログ' />
-                    */}
                     <RNScrollView style={styles.logs} >
-                        {this.context.logs.map((log, index) => (
+                        {this.context.logs.reverse().map((log, index) => (
                             <View style={styles.flexLog} key={"v" + index}>
                                 <Text key={index} style={styles.logs}>{log.emoji}</Text>
                                 <Text key={"k" + index} style={styles.json}>{log.message}</Text>
@@ -106,3 +103,5 @@ const styles = StyleSheet.create({
 		alignContent: "center"
 	}
 })
+
+LogScreen.contextType = Context;

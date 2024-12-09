@@ -4,8 +4,10 @@
  * Thanks :)
  */
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Image, ImageRequireSource, ImageStyle, ImageURISource, StyleProp } from 'react-native'
+import { View } from 'react-native'
+import Video, { VideoRef } from 'react-native-video'
 
 
 export const AutoHeightImage: React.FC<{
@@ -15,6 +17,7 @@ export const AutoHeightImage: React.FC<{
 }> = (props) => {
     const { source, style, width } = props
     const [height, setHeight] = useState<number>(0)
+    const videoRef = useRef<VideoRef | null>(null)
 
     useEffect(() => {
         if (typeof source === 'number') {
@@ -30,6 +33,18 @@ export const AutoHeightImage: React.FC<{
             )
         }
     }, [source, width])
+
+    /*
+    if( typeof source !== "number" && ( source.uri && source.uri.includes('mp4') ) ){
+        return (
+            <Video 
+                ref={videoRef}
+                source={{ uri: source.uri }} 
+                style={[{ height, width }, style]} 
+            />
+        )
+    }
+        */
 
     return (
         <Image source={source} resizeMode='contain' style={[{ height, width }, style]} />

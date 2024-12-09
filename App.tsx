@@ -9,7 +9,7 @@ import { Buffer } from 'buffer';
 import { BridgeServer } from 'react-native-http-bridge-refurbished'
 import DeviceInfo from 'react-native-device-info'
 
-import { RootStackParamList, InternalState, Notification, Ask, HTTPImageFrom, HTTPBufferRequest } from './types'
+import { RootStackParamList, InternalState, Notification, HTTPImageFrom, HTTPBufferRequest } from './types'
 
 import { Context } from './components/context'
 
@@ -46,7 +46,6 @@ export default class App extends Component {
 			logs: [],
 			showLogs: false,
 			image: null,
-			senderData: {} as Ask,
 			notification: {} as Notification,
 			showsDetailDisplay: false,
 			recivedShards: [] as HTTPBufferRequest[]
@@ -62,7 +61,10 @@ export default class App extends Component {
 	 * @returns 
 	 */
 	public httpServer() {
-		const httpbridge = new BridgeServer("neardrop.local", true)
+		// 既存のサーバーが起動していたら停止させる
+		BridgeServer.server instanceof BridgeServer && BridgeServer.server.stop();
+		
+		const httpbridge = new BridgeServer("neardrop.local")
 		httpbridge.listen(this.AIRDROP_HTTP_PORT);
 		
 
@@ -86,10 +88,7 @@ export default class App extends Component {
 
 		})
 
-		httpbridge.post<Ask>("/ask", async (request, response) => {
-
-			const data = request.postData
-			this.state.senderData = data as Ask
+		httpbridge.post("/ask", async (request, response) => {
 
 			return {
 				"status": "OK",
@@ -207,11 +206,14 @@ export default class App extends Component {
 
 	//#endregion
 
-	setObjectState = (state: Partial<InternalState>) => {
-		this.state.logs.push({
-			"emoji": "🔄",
-			"message": `State Changed: ${JSON.stringify(state)}`
-		})
+	/**
+	 * Global Stateを更新します。
+	 * @param state {Partial<InternalState>} 更新するState
+	 * @returns {void}
+	 * 
+	 * @final
+	 */
+	setObjectState = (state: Partial<InternalState>) => { 
 		this.setState({
 			...state
 		})

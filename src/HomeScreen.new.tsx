@@ -159,6 +159,8 @@ export default class HomeScreen extends Component<
                 })
             }
 
+            if( deviceName === null ) return;
+
             const newService = Object.assign(service, deviceName !== null ? deviceName.data : {}) as Service & { clientName: string, clientModel: string }
 
             this.context.setObjectState({

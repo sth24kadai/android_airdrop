@@ -39,9 +39,10 @@ export default class DetailScreen extends Component<
     context !: ContextType< typeof Context >
     
     public readonly HTTP_PORT : number = 8771
-    public readonly BYTES : number = 32768 // 32KB
+    public readonly BYTES : number = 32768 * 2 // 64KB
     public state = {
-        isSending : false
+        isSending : false,
+        startTime : 0
     }
 
     public static async fromDeviceCreate() : Promise< HTTPImageFrom > {
@@ -73,9 +74,10 @@ export default class DetailScreen extends Component<
                 if(
                     responseImage.assets === null ||
                     responseImage.assets?.length === 0 ||
-                    !Array.isArray( responseImage.assets ) ||
-                    typeof responseImage.assets[0].base64 === "undefined"
+                    !Array.isArray( responseImage.assets ) 
+                    //typeof responseImage.assets[0].base64 === "undefined"
                 ) return;
+                //console.log( responseImage.assets[0] );
 
                 this.context.setObjectState({
                     image: responseImage.assets[0].uri
@@ -86,10 +88,13 @@ export default class DetailScreen extends Component<
 
     public async sendImage( service : Service ){
         if(
-            this.context.senderData === null ||
+            this.context.selectedService === null ||
             this.context.image === null
         ) return;
         this.setState({ isSending : true })
+        this.setState({
+            startTime : Date.now()
+        })
 
         const imageResponse = await fetch( this.context.image )
         const imageBlob = await imageResponse.arrayBuffer();
@@ -182,8 +187,9 @@ export default class DetailScreen extends Component<
 				}
 
                 if( toStringedDatas.length === index + 1 ) {
+                    console.log(`Send completed ${Date.now() - this.state.startTime} ms`)
                     showNotification({
-                        title : "送信が完了しました。",
+                        title : `送信が完了しました。 かかった時間：${Date.now() - this.state.startTime} ms`,
                         description : `シャード個数 ${toStringedDatas.length } shards, トータル ${Math.round( ( rawData.byteLength / 1024 / 1024 )* 10 ) / 10 } MB`
                     })
                     this.context.setObjectState({
@@ -235,7 +241,7 @@ export default class DetailScreen extends Component<
                             画像を選択する
                         </Button>
                         <View style={styles.flexCenter}>
-                            {this.context.image && <AutoHeightImage source={{ uri: this.context.image }} width={350} />}
+                            {this.context.image &&  <AutoHeightImage source={{ uri: this.context.image }} width={350} />}
                         </View>
                         <Button mode="contained-tonal" onPress={() => this.sendImage( service )} disabled={this.state.isSending || !this.context.image} >
                             データを送信する
