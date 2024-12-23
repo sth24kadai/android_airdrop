@@ -13,5 +13,7 @@ export const Context = React.createContext({
     notification: {} as Notification | null,
     showsDetailDisplay : false,
     recivedShards : [] as HTTPBufferRequest[],
+    ip: "",
+    showRequestNFCFlame: false,
     setObjectState: (state: Partial<InternalState>) => {}
 });

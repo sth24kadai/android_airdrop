@@ -18,8 +18,10 @@ import DetailScreen from "./src/DetailScreen.new";
 import LogScreen from './src/logScreen'
 import ComingData from "./src/ShowComingDatas"
 import { NotifierWrapper, Notifier } from 'react-native-notifier'
-import nfcManager, { Ndef, NfcEvents, NfcManager, NfcTech, OnNfcEvents } from 'react-native-nfc-manager'
+import nfcManager, { Ndef, NfcEvents, NfcManager, NfcTech, OnDiscoverTag, OnNfcEvents } from 'react-native-nfc-manager'
 import { NetworkInfo } from 'react-native-network-info'
+import { useOutletDeclaration } from 'reconnect.js'
+import { NfcPromptAndroid } from './components/requestNFCFlame'
 
 
 
@@ -27,12 +29,12 @@ const Stack = createStackNavigator<RootStackParamList>()
 
 
 /**
- * アプリのエントリーポイント
+ * アプリのエントリーポイント	
  */
 export default class App extends Component {
 
 	public state: InternalState & {
-		ip: string
+		ip: string,
 	}
 
 	private AIRDROP_HTTP_PORT = 8771
@@ -53,47 +55,14 @@ export default class App extends Component {
 			notification: {} as Notification,
 			showsDetailDisplay: false,
 			recivedShards: [] as HTTPBufferRequest[],
-			ip: ""
+			ip: "",
+			showRequestNFCFlame: false,
 		}
 
 		this.__httpServer = void 0;
 	}
 
-	public async startNFC() {
-		// NFCをスタートする
-		if (!nfcManager.isSupported()) return;
-		nfcManager.start();
-		await nfcManager.requestTechnology(
-			[ NfcTech.Ndef],
-			{
-				alertMessage: "Ready to read NDEF message"
-			}
-		);
-		const pages = await nfcManager.getTag(); 
-		console.log(pages);
 
-
-		if (Platform.OS === 'android') {
-			nfcManager.setEventListener(
-				NfcEvents.StateChanged,
-				() => {
-					nfcManager.cancelTechnologyRequest().catch(() => 0);
-				},
-			);
-		}
-
-		/**
-		 * 
-		 */
-
-
-		await nfcManager.registerTagEvent().catch(
-			(err) => {
-				console.log("registerTagEvent error", err)
-				nfcManager.unregisterTagEvent().catch(() => { })
-			}
-		)
-	}
 	// #region HTTP Client Server
 	/**
 	 * HTTPサーバーを起動します。
@@ -260,8 +229,9 @@ export default class App extends Component {
 	}
 
 	componentDidMount(): void {
+		//useOutletDeclaration("displayNFCFlame", false)
 		this.__httpServer = this.httpServer()
-		this.startNFC()
+		//this.startNFC()
 		NetworkInfo.getIPV4Address().then(v => {
 			this.setState({
 				ip: v

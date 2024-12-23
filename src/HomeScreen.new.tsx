@@ -5,7 +5,9 @@ import {
     Text,
     FlatList,
     RefreshControl,
-    View
+    View,
+    Platform,
+    Alert
 } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import SafeAreaView from 'react-native-safe-area-view';
@@ -25,12 +27,15 @@ import { RootStackParamList } from '../types';
 import { Context } from '../components/context';
 import { NetworkInfo } from 'react-native-network-info';
 import { Notifier } from 'react-native-notifier';
-import nfcManager, { Ndef, NfcTech } from 'react-native-nfc-manager';
+import nfcManager, { Ndef, NfcEvents, NfcTech } from 'react-native-nfc-manager';
+import { NfcPromptAndroid } from '../components/requestNFCFlame';
 
 /**
  * Zeroconfインスタンスを生成
  */
 const zeroconf = new Zeroconf()
+nfcManager.start();
+
 
 export default class HomeScreen extends Component<
     NativeStackScreenProps<RootStackParamList, "デバイスの選択">
@@ -182,22 +187,60 @@ export default class HomeScreen extends Component<
         })
     }
 
-    public async nfcRequest() {
-        await nfcManager.cancelTechnologyRequest().catch(() => 0)
+    public async startNFC() {
         try {
-            await nfcManager.requestTechnology([NfcTech.Ndef], {
-                alertMessage: "ファイルを送信する端末をNFCタグに近づけてください"
-            })
-            await nfcManager.getTag()
-            const bytes = Ndef.encodeMessage([Ndef.uriRecord(`nd:${this.state.ip}`)]);
+            await nfcManager.requestTechnology(NfcTech.IsoDep)
 
-            if (bytes) {
-                await nfcManager.ndefHandler.writeNdefMessage(bytes);
-                //const message = await nfcManager.ndefHandler.getNdefMessage()
-				//console.log("NFC Message", message)
-                console.log("Wrote ndef message", bytes)
-                await nfcManager.close().catch(() => 0)
+            const tag = await nfcManager.getTag();
+            console.log('NFC Tag Found:', tag);
+
+            
+            const response = await nfcManager.transceive([
+                0x00, 0xB0, 0x00, 0x00, 0x10
+            ])
+            console.log("Tag found", response);
+
+            const responseData = Buffer.from(response).toString('hex');
+            Alert.alert('Tag Response', responseData);
+      
+        } catch (err) {
+            console.log("Read nfc error", err)
+        } finally {
+            nfcManager.cancelTechnologyRequest();
+        }
+
+    }
+
+    public async nfcRequest() {
+        try {
+            await nfcManager.requestTechnology(NfcTech.IsoDep)
+
+            const authCommand = [0xFF, 0x82, 0x00, 0x00, 0x06, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+            const authResponse = await nfcManager.transceive(authCommand);
+        
+            if (!Buffer.from(authResponse).toString('hex').endsWith('9000')) {
+              throw new Error('Authentication failed!');
             }
+
+            const dataToWrite = Buffer.from(this.state.ip ?? "0")
+
+            const apduCommand = [
+              0x00,
+              0xD6,
+              0x00,
+              0x00,
+              dataToWrite.byteLength, 
+              ...dataToWrite,
+            ];
+
+            const response = await nfcManager.transceive(apduCommand);
+            const responseData = Buffer.from(response).toString('hex');
+            if (responseData.endsWith('9000')) {
+              Alert.alert('Success', 'Data written successfully!');
+            } else {
+              Alert.alert('Error', `Failed to write data. Response: ${responseData}`);
+            }      
+
         } catch (err) {
             nfcManager.cancelTechnologyRequest().catch(() => 0)
             console.log(err)
@@ -318,6 +361,9 @@ export default class HomeScreen extends Component<
                                 </PaperButton>
                                 <PaperButton icon="nfc" mode='contained-tonal' onPress={() => this.nfcRequest()}>
                                     NFCでファイルを送信する
+                                </PaperButton>
+                                <PaperButton icon="nfc" mode='contained-tonal' onPress={() => this.startNFC()}>
+                                    NFCを受信モードにする
                                 </PaperButton>
                             </View>
                         )}

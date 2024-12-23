@@ -14,7 +14,8 @@ export interface InternalState {
 	notification: Notification | null
 	showsDetailDisplay : boolean 
 	recivedDatas : { from : string, bytes : number, data : Buffer, uri: string }[]
-	recivedShards : HTTPBufferRequest[]
+	recivedShards : HTTPBufferRequest[],
+	showRequestNFCFlame: boolean,
 }
 
 export interface Notification {
