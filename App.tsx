@@ -20,8 +20,12 @@ import ComingData from "./src/ShowComingDatas"
 import { NotifierWrapper, Notifier } from 'react-native-notifier'
 import nfcManager, { Ndef, NfcEvents, NfcManager, NfcTech, OnDiscoverTag, OnNfcEvents } from 'react-native-nfc-manager'
 import { NetworkInfo } from 'react-native-network-info'
+<<<<<<< HEAD
 import { useOutletDeclaration } from 'reconnect.js'
 import { NfcPromptAndroid } from './components/requestNFCFlame'
+=======
+import NFCWaitingScreen from './src/NFCWaitingScreen'
+>>>>>>> 6089f360eac3bcb02ad0eb4ab7ebe2b07b924782
 
 
 
@@ -62,6 +66,22 @@ export default class App extends Component {
 		this.__httpServer = void 0;
 	}
 
+<<<<<<< HEAD
+=======
+	public async startNFC() {
+		// NFCをスタートする
+		nfcManager.close();
+		if (!nfcManager.isSupported()) return;
+		nfcManager.start();
+		await nfcManager.requestTechnology(
+			[ NfcTech.Ndef ],
+			{
+				alertMessage: "Ready to read NDEF message"
+			}
+		);
+		const pages = await nfcManager.getTag(); 
+		console.log(pages);
+>>>>>>> 6089f360eac3bcb02ad0eb4ab7ebe2b07b924782
 
 	// #region HTTP Client Server
 	/**
@@ -264,6 +284,10 @@ export default class App extends Component {
 							<Stack.Screen
 								name="デバイスの選択"
 								component={HomeScreen}
+							/>
+							<Stack.Screen
+								name="NFCWait"
+								component={NFCWaitingScreen}
 							/>
 							<Stack.Screen
 								name="DetailScreen"

@@ -189,7 +189,14 @@ export default class HomeScreen extends Component<
 
     public async startNFC() {
         try {
+<<<<<<< HEAD
             await nfcManager.requestTechnology(NfcTech.IsoDep)
+=======
+            await nfcManager.requestTechnology([NfcTech.Ndef], {
+                alertMessage: "ファイルを送信する端末をNFCタグに近づけてください"
+            })
+            const bytes = Ndef.encodeMessage([Ndef.textRecord(`nd:${this.state.ip}`)]);
+>>>>>>> 6089f360eac3bcb02ad0eb4ab7ebe2b07b924782
 
             const tag = await nfcManager.getTag();
             console.log('NFC Tag Found:', tag);
@@ -362,8 +369,13 @@ export default class HomeScreen extends Component<
                                 <PaperButton icon="nfc" mode='contained-tonal' onPress={() => this.nfcRequest()}>
                                     NFCでファイルを送信する
                                 </PaperButton>
+<<<<<<< HEAD
                                 <PaperButton icon="nfc" mode='contained-tonal' onPress={() => this.startNFC()}>
                                     NFCを受信モードにする
+=======
+                                <PaperButton icon="nfc" mode='contained-tonal' onPress={() => this.props.navigation.navigate("NFCWait")}>
+                                    NFCテストスクリーン
+>>>>>>> 6089f360eac3bcb02ad0eb4ab7ebe2b07b924782
                                 </PaperButton>
                             </View>
                         )}
