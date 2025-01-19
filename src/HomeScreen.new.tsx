@@ -1,4 +1,5 @@
 import { Component, ContextType } from 'react';
+import React from 'react';
 import {
     StyleSheet,
     TouchableOpacity,

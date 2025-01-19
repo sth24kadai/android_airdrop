@@ -9,4 +9,7 @@ export type RootStackParamList = {
     DetailScreen: undefined;
     LogScreen: undefined;
     写真の保存: undefined;
+    SelectImageInitScreen: undefined;
+    SelectSenderScreen: undefined;
+    ScanQRScreen: undefined;
 };

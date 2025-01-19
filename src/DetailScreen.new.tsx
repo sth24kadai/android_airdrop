@@ -206,7 +206,7 @@ export default class DetailScreen extends Component<
                     this.context.setObjectState({
                         image : null
                     })
-                    this.props.navigation.navigate('デバイスの選択')
+                    this.props.navigation.navigate('SelectImageInitScreen')
                 }
             })
         )
@@ -243,14 +243,6 @@ export default class DetailScreen extends Component<
             <SafeAreaProvider>
                 <SafeAreaView style={ styles.container }>
                     <RNScrollView>
-                        <View style={ styles.udpadding}>
-                            <PaperText variant="headlineMedium">
-                                {typeof service?.clientName === "undefined" ? service.fullName.split('.')[0] : service.clientName} ({service.addresses.join(', ')})
-                            </PaperText>
-                        </View>
-                        <Button mode="contained-tonal" onPress={(e) => this.selectImage(e)}>
-                            画像を選択する
-                        </Button>
                         <View style={styles.flexCenter}>
                             {this.context.image &&  <AutoHeightImage source={{ uri: this.context.image }} width={350} />}
                         </View>
@@ -265,7 +257,7 @@ export default class DetailScreen extends Component<
 }
 
 const styles = StyleSheet.create({
-	container: {
+    container: {
 		flex: 1,
 		marginLeft: 10,
 		marginRight: 10,

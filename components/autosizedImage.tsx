@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react'
-import { Image, ImageRequireSource, ImageStyle, ImageURISource, StyleProp } from 'react-native'
+import { Button, Image, ImageRequireSource, ImageStyle, ImageURISource, StyleProp } from 'react-native'
 import { View } from 'react-native'
 import Video, { VideoRef } from 'react-native-video'
 
@@ -14,6 +14,7 @@ export const AutoHeightImage: React.FC<{
     source: ImageURISource | ImageRequireSource
     width: number
     style?: StyleProp<ImageStyle>
+    onDeletePut?: (e: any) => void
 }> = (props) => {
     const { source, style, width } = props
     const [height, setHeight] = useState<number>(0)
@@ -47,6 +48,11 @@ export const AutoHeightImage: React.FC<{
         */
 
     return (
-        <Image source={source} resizeMode='contain' style={[{ height, width }, style]} />
+        <>
+            <Image source={source} resizeMode='contain' style={[{ height, width }, style]} />
+            <View style={{ position: 'absolute', right: 20, top: 0 }}>
+                <Button title="×" color="red" onPress={props.onDeletePut}></Button>
+            </View>
+        </>
     )
 }

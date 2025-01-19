@@ -20,12 +20,16 @@ import ComingData from "./src/ShowComingDatas"
 import { NotifierWrapper, Notifier } from 'react-native-notifier'
 import nfcManager, { Ndef, NfcEvents, NfcManager, NfcTech, OnNfcEvents } from 'react-native-nfc-manager'
 import { NetworkInfo } from 'react-native-network-info'
+import Zeroconf from 'react-native-zeroconf'
+import SelectSenderScreen from './src/SelectSenderScreen'
+import SelectImageInitScreen from './src/SelectImageInitScreen'
+import QR from './src/ScanQRScreen'
 
 
 
 const Stack = createStackNavigator<RootStackParamList>()
 
-
+const zeroconf = new Zeroconf()
 /**
  * アプリのエントリーポイント
  */
@@ -35,9 +39,10 @@ export default class App extends Component {
 		ip: string
 	}
 
-	private AIRDROP_HTTP_PORT = 8771
-
 	private __httpServer: BridgeServer | undefined;
+	private readonly HTTP_PORT: number = 8771
+	private timeout: NodeJS.Timeout | null = null;
+
 
 	constructor(props: any) {
 		super(props);
@@ -59,41 +64,132 @@ export default class App extends Component {
 		this.__httpServer = void 0;
 	}
 
-	public async startNFC() {
-		// NFCをスタートする
-		if (!nfcManager.isSupported()) return;
-		nfcManager.start();
-		await nfcManager.requestTechnology(
-			[ NfcTech.Ndef],
+	private async getDeviceName(service: Service) {
+		const response = await fetch(`http://${service.host}:${this.HTTP_PORT}/info`,
 			{
-				alertMessage: "Ready to read NDEF message"
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json"
+				}
 			}
-		);
-		const pages = await nfcManager.getTag(); 
-		console.log(pages);
+		).catch((err) => {
+			Notifier.showNotification({
+				title: "デバイスの詳細取得に失敗しました。",
+				description: `詳細： ${service.host}の取得に失敗しました。\n 原因：${err}`,
+			})
 
+			return null;
+		})
 
-		if (Platform.OS === 'android') {
-			nfcManager.setEventListener(
-				NfcEvents.StateChanged,
-				() => {
-					nfcManager.cancelTechnologyRequest().catch(() => 0);
-				},
-			);
+		if (!(response instanceof Response)) return null;
+		if (response.ok) {
+			const data = await response.json() as { status: string, data: { clientId: string, clientName: string, clientModel: string } };
+			return data;
+		} else {
+			Notifier.showNotification({
+				title: "デバイスの詳細取得に失敗しました。",
+				description: `詳細：相手サーバーがレスポンスエラーを発生させました。`
+			})
 		}
 
-		/**
-		 * 
-		 */
-
-
-		await nfcManager.registerTagEvent().catch(
-			(err) => {
-				console.log("registerTagEvent error", err)
-				nfcManager.unregisterTagEvent().catch(() => { })
-			}
-		)
+		return null;
 	}
+
+	private get random8BitArrayGenerate(): Uint8Array {
+        const randomNumbers: number[] = [];
+
+        for (let i = 0; i < 6; i++) {
+            randomNumbers.push(
+                Math.floor(
+                    Math.random() * 256
+                )
+            )
+        }
+
+        return Uint8Array.from(randomNumbers)
+    }
+
+	private mDNSEventHandlers() {
+
+		console.log("mDNS Event Handlers")
+		/* mDNSサービスを開始 */
+		zeroconf.publishService(
+			/* サービス名 */
+			'FC9F5ED42C8A',
+			/* プロトコル */
+			'tcp',
+			/* ドメイン */
+			'local',
+			/* ホスト名 */
+			Buffer.from(this.random8BitArrayGenerate).toString('base64'),
+			/* 使用ポート */
+			5353
+		)
+
+		zeroconf.on('start', () => {
+			this.setObjectState({ isScanning: true })
+			this.state.logs.push({
+				emoji: '🔍',
+				message: 'Started scanning and lunching the mDNS service...'
+			})
+
+		})
+
+		zeroconf.on('stop', () => {
+			this.setObjectState({ isScanning: false })
+			this.state.logs.push({
+				emoji: '🛑',
+				message: 'Stopped scanning'
+			})
+		})
+
+		zeroconf.on('update', () => {
+			this.state.logs.push({
+				emoji: '🔄',
+				message: 'Updating Data...'
+			})
+		})
+
+		zeroconf.on('resolved', async service => {
+			this.state.logs.push({
+				emoji: '🐉',
+				message: `Resolved ${service.name} (${service.host})`
+			})
+			this.state.logs.push({
+				emoji: '🔗',
+				message: JSON.stringify(service)
+			})
+
+			const deviceName = await this.getDeviceName(service)
+			if (deviceName !== null) {
+				this.state.logs.push({
+					emoji: '📱',
+					message: `Fetch Success: ${JSON.stringify(deviceName.data.clientId)} -  ${deviceName.data.clientName} (${deviceName.data.clientModel})`
+				})
+			}
+
+			if (deviceName === null) return;
+
+			const newService = Object.assign(service, deviceName !== null ? deviceName.data : {}) as Service & { clientName: string, clientModel: string }
+
+			this.setObjectState({
+				services: {
+					...this.state.services,
+					[service.host]: newService,
+				},
+			})
+		})
+
+
+		zeroconf.on('error', err => {
+			this.setObjectState({ isScanning: false })
+			this.state.logs.push({
+				emoji: '🚨',
+				message: `Error: ${err}`
+			})
+		})
+	}
+
 	// #region HTTP Client Server
 	/**
 	 * HTTPサーバーを起動します。
@@ -105,12 +201,12 @@ export default class App extends Component {
 		BridgeServer.server instanceof BridgeServer && BridgeServer.server.stop();
 
 		const httpbridge = new BridgeServer("neardrop.local")
-		httpbridge.listen(this.AIRDROP_HTTP_PORT);
+		httpbridge.listen(this.HTTP_PORT);
 
 
 		this.state.logs.push({
 			emoji: '🔗',
-			message: `Starting HTTP server on port ${this.AIRDROP_HTTP_PORT}`
+			message: `Starting HTTP server on port ${this.HTTP_PORT}`
 		})
 
 		httpbridge.get('/info', async (request, response) => {
@@ -259,9 +355,26 @@ export default class App extends Component {
 		})
 	}
 
+	private refreshData() {
+        const { isScanning } = this.state;
+        if (isScanning) return;
+
+        this.setObjectState({
+            services: {}
+        });
+
+        zeroconf.scan('FC9F5ED42C8A', 'tcp', 'local.')
+
+        this.timeout && clearTimeout(this.timeout); // 現在のインターバルをリセットする
+        this.timeout = setTimeout(() => {
+            zeroconf.stop();
+        }, 1000 * 5) // 五秒後にスキャンを停止する;
+    }
+
 	componentDidMount(): void {
-		this.__httpServer = this.httpServer()
-		this.startNFC()
+		this.refreshData()
+		this.__httpServer = this.httpServer() // 常時起動プロセス
+		this.mDNSEventHandlers() // 常時起動プロセス
 		NetworkInfo.getIPV4Address().then(v => {
 			this.setState({
 				ip: v
@@ -270,14 +383,12 @@ export default class App extends Component {
 	}
 
 	componentWillUnmount(): void {
-		nfcManager.setEventListener(NfcEvents.DiscoverTag, null)
-		nfcManager.setEventListener(NfcEvents.DiscoverBackgroundTag, null)
-		nfcManager.unregisterTagEvent().catch(() => { });
-		nfcManager.cancelTechnologyRequest().catch(() => { });
 		if (Platform.OS === "ios") {
 
 		}
 		this.__httpServer instanceof BridgeServer && this.__httpServer.stop()
+		zeroconf.stop();
+
 	}
 
 	render(): React.ReactNode {
@@ -285,12 +396,25 @@ export default class App extends Component {
 			<Context.Provider
 				value={{
 					...this.state,
-					setObjectState: this.setObjectState
+					setObjectState: this.setObjectState,
+					refreshZerocnf: this.refreshData
 				}}
 			>
 				<NotifierWrapper>
 					<NavigationContainer>
 						<Stack.Navigator>
+							<Stack.Screen
+								name="SelectImageInitScreen"
+								component={SelectImageInitScreen}
+							/>
+							<Stack.Screen
+								name="SelectSenderScreen"
+								component={SelectSenderScreen}
+							/>
+							<Stack.Screen
+								name="ScanQRScreen"
+								component={QR}
+							/>
 							<Stack.Screen
 								name="デバイスの選択"
 								component={HomeScreen}
