@@ -92,6 +92,7 @@ export default class ScanQRCodes extends Component<NativeStackScreenProps<RootSt
                     selectedService: ip
                 })
                 this.state.readyToScan = false;
+                this.props.navigation.navigate("ScannedQRScreen")
             }
         })
     }

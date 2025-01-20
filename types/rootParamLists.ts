@@ -12,4 +12,5 @@ export type RootStackParamList = {
     SelectImageInitScreen: undefined;
     SelectSenderScreen: undefined;
     ScanQRScreen: undefined;
+    ScannedQRScreen : undefined
 };

@@ -65,7 +65,6 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
     }
 
     public createShareQR() {
-        // irtghuiruthiurtgiouhjtgiojtghioutghiojetgijorfgipjrfgipjrfgijpfgijfgshiuodfgijodfgijgiojgd
         if (this.context.image === null) return;
         const selfIP = this.context.ip;
         if( selfIP === null ) return;
@@ -101,7 +100,7 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                             </Button>
                         </View>
                         <View style={styles.flexCenter}>
-                            {this.context.image && <AutoHeightImage onDeletePut={() => this.context.setObjectState({ image: null })} source={{ uri: this.context.image }} width={350} />}
+                            {this.context.image && <AutoHeightImage onDeletePut={() => { this.context.setObjectState({ image: null }); this.setState({ qrURL: null }) }} source={{ uri: this.context.image }} width={350} />}
                         </View>
                         <View style={styles.flexColumn}>
                             {this.context.image &&

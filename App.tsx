@@ -24,6 +24,7 @@ import Zeroconf from 'react-native-zeroconf'
 import SelectSenderScreen from './src/SelectSenderScreen'
 import SelectImageInitScreen from './src/SelectImageInitScreen'
 import QR from './src/ScanQRScreen'
+import QRCodeScannedScreen from './src/QRCodeScannedScreen'
 
 
 
@@ -190,6 +191,69 @@ export default class App extends Component {
 		})
 	}
 
+	public async shardSend( rawData : Buffer, ip: string, contentType : string ) {
+			const shards = this.shardProsessor( rawData, 32768);
+			const fromData = await DetailScreen.fromDeviceCreate();
+			const hashedFromData = Buffer.from(
+				JSON.stringify( fromData )
+			).toString("base64")
+	
+			const toStringedDatas = await Promise.all(
+				shards.map( async ( shard, index ) => {
+					const requestObject = {
+						from : hashedFromData,
+						status : "SHARD_POSTING",
+						uri : shard.toString("binary"),
+						totalShards : shards.length,
+						shardIndex : index,
+						imgType : contentType
+					}
+					const stringifyData = JSON.stringify( requestObject )
+					return stringifyData
+				})
+			)
+	
+			await Promise.all(
+				toStringedDatas.map( async ( datum, index ) => {
+					const response = await fetch(`http://${ip}:${this.HTTP_PORT}/upload/shard`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: datum
+					})
+	
+					if (!response.ok) {
+						this.setState({ isSending: false })
+						Notifier.showNotification({
+							title: 'エラーが発生しました。',
+							description: `シャード(#${index})の送信に失敗しました。`,
+							duration: 5000,
+							showAnimationDuration: 800,
+						})
+					}
+	
+					if( toStringedDatas.length === index + 1 ) {
+						Notifier.showNotification({
+							title : `送信が完了しました.`,
+							description : `シャード個数 ${toStringedDatas.length } shards, トータル ${Math.round( ( rawData.byteLength / 1024 / 1024 )* 10 ) / 10 } MB`
+						})
+					}
+				})
+			)
+		}
+	
+		public shardProsessor( data : Buffer, size : number = 32768){
+			const totalShards = Math.ceil(data.byteLength / size)
+			const shards : Buffer[] = []
+			for (let i = 0; i < totalShards; i++) {
+				const shard = data.subarray(i * size, (i + 1) * size)
+				shards.push(shard)
+			}
+			console.log(`Sharded ${shards.length} shards, each shard is ${size} bytes`)
+			return shards
+		}
+
 	// #region HTTP Client Server
 	/**
 	 * HTTPサーバーを起動します。
@@ -220,8 +284,64 @@ export default class App extends Component {
 			})
 		})
 
-		httpbridge.get('/authorization', async (request, response) => {
+		httpbridge.post('/qr/please', async ( request, response ) => {
+			console.log( request )
+			if( typeof this.state.image === "undefined" || this.state.image === null ){
+				return {
+					status: "NG",
+					data: {
+						message: "No Image"
+					}
+				}
+			}
 
+			const raw = request.postData as string;
+			const unZip = raw
+
+			const ipData =
+				typeof unZip !== "object" ? (JSON.parse(unZip)) as { ip : string } :
+					unZip as { ip : string }
+
+			const imageResponse = await fetch( this.state.image )
+			const imageBlob = await imageResponse.arrayBuffer();
+			/**
+			 * バッファー
+			 */
+			const imageBuffer = Buffer.from( imageBlob )
+			const askResponse = await fetch(`http://${ipData.ip}:${this.HTTP_PORT}/ask`, {
+				method: "POST",
+				headers: {
+					"Content-type" : "application/json"
+				}
+			}).catch(( err ) => {
+				this.setState({ isSending : false })
+				Notifier.showNotification({
+					title: 'エラーが発生しました',
+					description: `受信クライアントの互換性がありませんでした`,
+					duration: 5000,
+					showAnimationDuration: 800,
+				})
+
+				return;
+			})
+			// catchでvoidになるので
+			if( typeof askResponse === "undefined" ) return;
+
+			if( askResponse.ok ){
+				Notifier.showNotification({
+					title: '送信中です。',
+					description: `写真を送信しています。`,
+					duration: 5000,
+					showAnimationDuration: 800,
+				})
+
+				// シャード送信をする
+				await this.shardSend( 
+					imageBuffer, 
+					ipData.ip,
+					imageResponse.headers.get('content-type')?.toLocaleLowerCase() || "image/png" 
+				)
+			}
 		})
 
 		httpbridge.post("/ask", async (request, response) => {
@@ -329,6 +449,7 @@ export default class App extends Component {
 					data: data,
 					uri: toBase64URI
 				})
+				
 			}
 
 
@@ -430,6 +551,10 @@ export default class App extends Component {
 							<Stack.Screen
 								name="写真の保存"
 								component={ComingData}
+							/>
+							<Stack.Screen
+								name="ScannedQRScreen"
+								component={QRCodeScannedScreen}
 							/>
 						</Stack.Navigator>
 					</NavigationContainer>
