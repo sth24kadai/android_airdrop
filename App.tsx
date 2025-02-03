@@ -25,6 +25,7 @@ import SelectSenderScreen from './src/SelectSenderScreen'
 import SelectImageInitScreen from './src/SelectImageInitScreen'
 import QR from './src/ScanQRScreen'
 import QRCodeScannedScreen from './src/QRCodeScannedScreen'
+import { ShardSender } from './components/shardSender'
 
 
 
@@ -34,14 +35,14 @@ const zeroconf = new Zeroconf()
 /**
  * アプリのエントリーポイント
  */
-export default class App extends Component {
-
+export default class App extends ShardSender<null> {
+	
 	public state: InternalState & {
 		ip: string
 	}
 
 	private __httpServer: BridgeServer | undefined;
-	private readonly HTTP_PORT: number = 8771
+	public readonly HTTP_PORT: number = 8771
 	private timeout: NodeJS.Timeout | null = null;
 
 
@@ -191,69 +192,6 @@ export default class App extends Component {
 		})
 	}
 
-	public async shardSend( rawData : Buffer, ip: string, contentType : string ) {
-			const shards = this.shardProsessor( rawData, 32768);
-			const fromData = await DetailScreen.fromDeviceCreate();
-			const hashedFromData = Buffer.from(
-				JSON.stringify( fromData )
-			).toString("base64")
-	
-			const toStringedDatas = await Promise.all(
-				shards.map( async ( shard, index ) => {
-					const requestObject = {
-						from : hashedFromData,
-						status : "SHARD_POSTING",
-						uri : shard.toString("binary"),
-						totalShards : shards.length,
-						shardIndex : index,
-						imgType : contentType
-					}
-					const stringifyData = JSON.stringify( requestObject )
-					return stringifyData
-				})
-			)
-	
-			await Promise.all(
-				toStringedDatas.map( async ( datum, index ) => {
-					const response = await fetch(`http://${ip}:${this.HTTP_PORT}/upload/shard`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-						},
-						body: datum
-					})
-	
-					if (!response.ok) {
-						this.setState({ isSending: false })
-						Notifier.showNotification({
-							title: 'エラーが発生しました。',
-							description: `シャード(#${index})の送信に失敗しました。`,
-							duration: 5000,
-							showAnimationDuration: 800,
-						})
-					}
-	
-					if( toStringedDatas.length === index + 1 ) {
-						Notifier.showNotification({
-							title : `送信が完了しました.`,
-							description : `シャード個数 ${toStringedDatas.length } shards, トータル ${Math.round( ( rawData.byteLength / 1024 / 1024 )* 10 ) / 10 } MB`
-						})
-					}
-				})
-			)
-		}
-	
-		public shardProsessor( data : Buffer, size : number = 32768){
-			const totalShards = Math.ceil(data.byteLength / size)
-			const shards : Buffer[] = []
-			for (let i = 0; i < totalShards; i++) {
-				const shard = data.subarray(i * size, (i + 1) * size)
-				shards.push(shard)
-			}
-			console.log(`Sharded ${shards.length} shards, each shard is ${size} bytes`)
-			return shards
-		}
-
 	// #region HTTP Client Server
 	/**
 	 * HTTPサーバーを起動します。
@@ -339,7 +277,15 @@ export default class App extends Component {
 				await this.shardSend( 
 					imageBuffer, 
 					ipData.ip,
-					imageResponse.headers.get('content-type')?.toLocaleLowerCase() || "image/png" 
+					imageResponse.headers.get('content-type')?.toLocaleLowerCase() || "image/png",
+					() => {
+						Notifier.showNotification({
+							title: '送信完了',
+							description: `写真を送信しました。`,
+							duration: 5000,
+							showAnimationDuration: 800,
+						})
+					}
 				)
 			}
 		})

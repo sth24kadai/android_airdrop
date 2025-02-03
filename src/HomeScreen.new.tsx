@@ -308,9 +308,6 @@ export default class HomeScreen extends Component<
                     <View style={styles.udpadding}>
                         {!isScanning && (
                             <View style={styles.flexColumn}>
-                                <PaperButton icon="image" mode='contained-tonal' onPress={() => this.props.navigation.navigate("写真の保存")}>
-                                    写真を見る
-                                </PaperButton>
                                 <PaperButton icon="reload" mode='contained-tonal' onPress={() => this.refreshData()}>
                                     リロードする
                                 </PaperButton>

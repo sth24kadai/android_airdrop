@@ -10,6 +10,7 @@ import { RootStackParamList } from "../types";
 import { Context } from '../components/context';
 import { AutoHeightImage } from "../components/autosizedImage";
 import QRCode from "react-native-qrcode-svg";
+import { ShardSender } from "../components/shardSender";
 
 export default class SelectImageInitScreen extends Component<NativeStackScreenProps<RootStackParamList, 'SelectImageInitScreen'>> {
 
@@ -103,6 +104,9 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                             {this.context.image && <AutoHeightImage onDeletePut={() => { this.context.setObjectState({ image: null }); this.setState({ qrURL: null }) }} source={{ uri: this.context.image }} width={350} />}
                         </View>
                         <View style={styles.flexColumn}>
+                            <Button icon="image" mode='contained-tonal' onPress={() => this.props.navigation.navigate("写真の保存")}>
+                                写真を見る
+                            </Button>
                             {this.context.image &&
                                 <Button mode="contained" onPress={() => this.selectSender()}>
                                     送信先を選択する
