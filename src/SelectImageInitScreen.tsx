@@ -31,7 +31,8 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
         const option: ImageLibraryOptions = {
             mediaType: "photo",
             quality: 1,
-            includeBase64: true
+            includeBase64: true,
+            selectionLimit: 10
         }
 
         launchImageLibrary(option, (responseImage) => {
@@ -53,8 +54,10 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                 ) return;
                 //console.log( responseImage.assets[0] );
 
+                console.log(  )
+
                 this.context.setObjectState({
-                    image: responseImage.assets[0].uri
+                    image: responseImage.assets.map((v) => v.uri).filter((v) => v !== null || typeof v !== "undefined") as string[]
                 })
             }
         })
@@ -101,7 +104,7 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                             </Button>
                         </View>
                         <View style={styles.flexCenter}>
-                            {this.context.image && <AutoHeightImage onDeletePut={() => { this.context.setObjectState({ image: null }); this.setState({ qrURL: null }) }} source={{ uri: this.context.image }} width={350} />}
+                            {this.context.image && [...( Array.isArray( this.context.image ) ? this.context.image : [this.context.image])].map((uri, index) => (<AutoHeightImage key={index} source={{ uri: uri }} width={350} /> ))}
                         </View>
                         <View style={styles.flexColumn}>
                             <Button icon="image" mode='contained-tonal' onPress={() => this.props.navigation.navigate("写真の保存")}>

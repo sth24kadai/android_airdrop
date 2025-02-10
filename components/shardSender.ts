@@ -19,6 +19,25 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
 
     public isSending: boolean = false
     public startTime: number = 0
+
+
+    public async getAllImages( paths : string[] | string ): Promise<{ mineType: string, buffer: Buffer }[]> {
+        const path = ( Array.isArray( paths ) ? paths : [paths])
+       
+        const url = await Promise.all( path.map( async ( path ) => {
+            const response = await fetch( path )
+            const buff = Buffer.from( await response.arrayBuffer() );
+            return {
+                buff,
+                mineType: response.headers.get('content-type')?.toLocaleLowerCase() || "image/png",
+            }
+        }))
+        return url.map( ( data ) => ({
+            buffer: Buffer.from( data.buff ),
+            mineType: data.mineType
+        }));
+    }
+
     /**
      * 
      * @param service Service Object 
@@ -28,7 +47,7 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
      */   
     public async sendImage(
         service: Service, 
-        image: string | null, 
+        image: string[] | string | null, 
         selectedService: string | null,
         callbackFunction?: () => void
     ) {
@@ -40,12 +59,7 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
         this.isSending = true
         this.startTime = Date.now()
 
-        const imageResponse = await fetch(image)
-        const imageBlob = await imageResponse.arrayBuffer();
-        /**
-         * バッファー
-         */
-        const imageBuffer = Buffer.from(imageBlob)
+        const imageBuffers = await this.getAllImages( image );
         const askResponse = await fetch(`http://${service.host}:${this.HTTP_PORT}/ask`, {
             method: "POST",
             headers: {
@@ -77,22 +91,32 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
                 hideEasing: Easing.ease,
             })
 
-            // シャード送信をする
-            await this.shardSend(
-                imageBuffer,
-                service.addresses[0],
-                imageResponse.headers.get('content-type')?.toLocaleLowerCase() || "image/png",
-                callbackFunction
+            if (typeof imageBuffers === "undefined") return;
+            await Promise.all(
+                imageBuffers.map(async (imageBuffer, index, totalArray) => {
+                    await this.shardSend(
+                        imageBuffer.buffer, 
+                        service.host, 
+                        imageBuffer.mineType, 
+                        index + 1,
+                        totalArray.length,
+                    )
+                })
             )
+            .then(() => {
+                typeof callbackFunction != "undefined" && callbackFunction();
+            })
         }
     }
 
-    public async shardSend(rawData: Buffer, ipAddress: string, contentType: string, callback?:() => void ) {
+    public async shardSend(rawData: Buffer, ipAddress: string, contentType: string, index: number, total : number, callback?:() => void ) {
         const shards = this.shardProsessor(rawData, this.BYTES);
         const fromData = await ShardSender.fromDeviceCreate();
         const hashedFromData = Buffer.from(
             JSON.stringify(fromData)
         ).toString("base64")
+
+        const uniqueSendID = ( Date.now() + Math.round( Math.random() * 100 ) ).toString(16)
 
         const toStringedDatas = await Promise.all(
             shards.map(async (shard, index) => {
@@ -102,7 +126,10 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
                     uri: shard.toString("binary"),
                     totalShards: shards.length,
                     shardIndex: index,
-                    imgType: contentType
+                    imgType: contentType,
+                    totalImageIndex: total,
+                    uniqueId: uniqueSendID,
+                    index: index
                 }
                 const stringifyData = JSON.stringify(requestObject)
                 return stringifyData
@@ -137,7 +164,9 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
                         title: `送信が完了しました。 かかった時間：${Date.now() - this.startTime} ms`,
                         description: `シャード個数 ${toStringedDatas.length} shards, トータル ${Math.round((rawData.byteLength / 1024 / 1024) * 10) / 10} MB`
                     })
-                    callback?.()
+                    if( total === index ) {
+                        return Promise.resolve();
+                    }
                 }
             })
         )

@@ -2,21 +2,16 @@
 import 'react-native-gesture-handler'
 import { ContextType } from "react"
 import { 
-    Platform,
     StyleSheet,
     View,
     ScrollView as RNScrollView,
-    GestureResponderEvent
 } from 'react-native'
 import {
     Button,
     Text as PaperText 
 } from "react-native-paper"
-import { HTTPImageFrom } from '../types'
 import { Context } from '../components/context'
-import DeviceInfo from 'react-native-device-info'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
-import { ImageLibraryOptions, launchImageLibrary } from 'react-native-image-picker'
 import { AutoHeightImage } from '../components/autosizedImage'
 import { NetworkInfo } from 'react-native-network-info'
 import { ShardSender } from '../components/shardSender'
@@ -74,7 +69,7 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
                 <SafeAreaView style={ styles.container }>
                     <RNScrollView>
                         <View style={styles.flexCenter}>
-                            {this.context.image &&  <AutoHeightImage source={{ uri: this.context.image }} width={350} />}
+                            {this.context.image && [...( Array.isArray( this.context.image ) ? this.context.image : [this.context.image])].map((uri, index) => (<AutoHeightImage key={index} source={{ uri: uri }} width={350} /> ))}
                         </View>
                         <Button mode="contained-tonal" onPress={() => this.sendImage( service, this.context.image, this.context.selectedService, () => this.callback() )} disabled={this.state.isSending || !this.context.image} >
                             データを送信する

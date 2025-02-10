@@ -53,7 +53,7 @@ export default class App extends ShardSender<null> {
 			isScanning: false,
 			selectedService: null,
 			services: {} as { [key: string]: Service & { clientName: string, clientModel: string } },
-			recivedDatas: [] as { from: string, bytes: number, data: Buffer, uri: string }[],
+			recivedDatas: [] as { from: string, bytes: number, data: Buffer, uri: string, uniqueGroupIndex: string }[],
 			logs: [],
 			showLogs: false,
 			image: null,
@@ -240,12 +240,7 @@ export default class App extends ShardSender<null> {
 				typeof unZip !== "object" ? (JSON.parse(unZip)) as { ip : string } :
 					unZip as { ip : string }
 
-			const imageResponse = await fetch( this.state.image )
-			const imageBlob = await imageResponse.arrayBuffer();
-			/**
-			 * バッファー
-			 */
-			const imageBuffer = Buffer.from( imageBlob )
+			const imageBuffers = await this.getAllImages( this.state.image );
 			const askResponse = await fetch(`http://${ipData.ip}:${this.HTTP_PORT}/ask`, {
 				method: "POST",
 				headers: {
@@ -273,20 +268,25 @@ export default class App extends ShardSender<null> {
 					showAnimationDuration: 800,
 				})
 
-				// シャード送信をする
-				await this.shardSend( 
-					imageBuffer, 
-					ipData.ip,
-					imageResponse.headers.get('content-type')?.toLocaleLowerCase() || "image/png",
-					() => {
-						Notifier.showNotification({
-							title: '送信完了',
-							description: `写真を送信しました。`,
-							duration: 5000,
-							showAnimationDuration: 800,
-						})
-					}
+				await Promise.all(
+					imageBuffers.map(async (imageBuffer, index, totalArray) => {
+						await this.shardSend(
+							imageBuffer.buffer, 
+							ipData.ip, 
+							imageBuffer.mineType, 
+							index + 1,
+							totalArray.length,
+						)
+					})
 				)
+				.then(() => {
+					Notifier.showNotification({
+						title: '送信完了',
+						description: `写真を送信しました。`,
+						duration: 5000,
+						showAnimationDuration: 800,
+					})			
+				})
 			}
 		})
 
@@ -358,7 +358,10 @@ export default class App extends ShardSender<null> {
 				totalShards: postJSONData.totalShards,
 				type: "base64-shards",
 				imgType: postJSONData.type,
-				status: "Shards"
+				status: "Shards",
+				index: postJSONData.index,
+				uniqueId: postJSONData.uniqueId,
+				totalImageIndex: postJSONData.totalImageIndex
 			})
 
 			console.log(`-----> Received ${postJSONData.shardIndex + 1} of ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`)
@@ -378,7 +381,7 @@ export default class App extends ShardSender<null> {
 					}
 				})
 
-				const shards = this.state.recivedShards.filter((shard) => shard.from === postJSONData.from)
+				const shards = this.state.recivedShards.filter((shard) => ( shard.from === postJSONData.from ) && ( shard.uniqueId === postJSONData.uniqueId ))
 				const data = Buffer.concat(
 					[...shards.sort((a, b) => a.shardIndex - b.shardIndex).map((shard) => shard.data)],
 				)
@@ -393,7 +396,8 @@ export default class App extends ShardSender<null> {
 					from: postJSONData.from,
 					bytes: data.byteLength,
 					data: data,
-					uri: toBase64URI
+					uri: toBase64URI,
+					uniqueGroupIndex: postJSONData.from+"-"+postJSONData.index+"-"+Math.round( new Date().getTime() / 1000 )
 				})
 				
 			}

@@ -18,29 +18,21 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
     //@ts-ignore
     context!: React.ContextType<typeof Context>
 
-    getRecentData() : string {
+    getRecentData() : string[] {
         const { recivedDatas } = this.context;
         if (recivedDatas.length === 0) {
-            return "";
+            return [];
         }
-
-        return recivedDatas[recivedDatas.length - 1].uri;
+        console.log( recivedDatas.length )
+        return recivedDatas.map( ( data ) => data.uri );
     }
 
-    getBase64URI() : string {
-        const recentBufferData = this.getRecentData();
-        if (recentBufferData.length === 0) {
-            return "";
-        }
-        if( typeof recentBufferData === "string" ){
-            return recentBufferData;
-        }
-        
-        return recentBufferData;
+    getBase64URI() : string[] {
+        return this.getRecentData().filter( ( uri ) => uri.startsWith('data:image/') );
     }
 
-    saveImage() {
-        const base64URI = this.getBase64URI();
+    saveImage( base64 : string ) {
+        const base64URI = base64;
         if (base64URI.length === 0) {
             return;
         }
@@ -72,14 +64,15 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
                 <SafeAreaView style={styles.baseFlexStyle}>
                     <ScrollView>
                         {
-                            this.getBase64URI() !== "" ? (
-                                <View style={styles.containText}>
-                                    <Text>直近で送られたファイル</Text>
-                                    <AutoHeightImage style={styles.noImageText} source={{ uri: this.getBase64URI() }} width={350} />
-                                    <Button icon="download" mode="contained" onPress={() => this.saveImage()}>
-                                        保存する
-                                    </Button>
-                                </View>
+                            this.getBase64URI().length > 0 ? (
+                                this.getBase64URI().map((uri, index) => (
+                                    <View key={index} style={styles.containText}>
+                                        <AutoHeightImage source={{ uri: uri }} width={350} />
+                                        <Button mode="contained-tonal" onPress={() => this.saveImage( uri )} >
+                                            保存する
+                                        </Button>
+                                    </View>
+                                ))
                             ) : (
                                 <Text style={styles.noImageText}>最近シェアされた写真はまだないようです。</Text>
                             )
