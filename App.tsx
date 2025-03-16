@@ -18,7 +18,6 @@ import DetailScreen from "./src/DetailScreen.new";
 import LogScreen from './src/logScreen'
 import ComingData from "./src/ShowComingDatas"
 import { NotifierWrapper, Notifier } from 'react-native-notifier'
-import nfcManager, { Ndef, NfcEvents, NfcManager, NfcTech, OnNfcEvents } from 'react-native-nfc-manager'
 import { NetworkInfo } from 'react-native-network-info'
 import Zeroconf from 'react-native-zeroconf'
 import SelectSenderScreen from './src/SelectSenderScreen'

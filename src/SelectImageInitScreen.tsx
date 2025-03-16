@@ -10,7 +10,6 @@ import { RootStackParamList } from "../types";
 import { Context } from '../components/context';
 import { AutoHeightImage } from "../components/autosizedImage";
 import QRCode from "react-native-qrcode-svg";
-import { ShardSender } from "../components/shardSender";
 
 export default class SelectImageInitScreen extends Component<NativeStackScreenProps<RootStackParamList, 'SelectImageInitScreen'>> {
 
@@ -50,11 +49,7 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                     responseImage.assets === null ||
                     responseImage.assets?.length === 0 ||
                     !Array.isArray(responseImage.assets)
-                    //typeof responseImage.assets[0].base64 === "undefined"
                 ) return;
-                //console.log( responseImage.assets[0] );
-
-                console.log(  )
 
                 this.context.setObjectState({
                     image: responseImage.assets.map((v) => v.uri).filter((v) => v !== null || typeof v !== "undefined") as string[]
@@ -108,7 +103,7 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                         </View>
                         <View style={styles.flexColumn}>
                             <Button icon="image" mode='contained-tonal' onPress={() => this.props.navigation.navigate("写真の保存")}>
-                                写真を見る
+                                送られてきた写真を見る
                             </Button>
                             {this.context.image &&
                                 <Button mode="contained" onPress={() => this.selectSender()}>
@@ -146,6 +141,12 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginTop: 10,
         marginBottom: 10,
+        borderRadius: 10,
+        borderStyle: "solid",
+        borderWidth: 1,
+        borderColor: "#f0f0f0",
+        minHeight: 100,
+        minWidth: "100%"
     },
     title: {
         fontSize: 30,

@@ -23,7 +23,6 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
         if (recivedDatas.length === 0) {
             return [];
         }
-        console.log( recivedDatas.length )
         return recivedDatas.map( ( data ) => data.uri );
     }
 
@@ -64,10 +63,14 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
                 <SafeAreaView style={styles.baseFlexStyle}>
                     <ScrollView>
                         {
-                            this.getBase64URI().length > 0 ? (
-                                this.getBase64URI().map((uri, index) => (
+                            this.getRecentData().length > 0 ? (
+                                this.getRecentData().map((uri, index) => (
                                     <View key={index} style={styles.containText}>
-                                        <AutoHeightImage source={{ uri: uri }} width={350} />
+                                        { uri.startsWith('data:image/') ? (
+                                            <AutoHeightImage width={350} source={{ uri: uri }} />
+                                        ) : (
+                                            <div> データファイル </div>
+                                        )}
                                         <Button mode="contained-tonal" onPress={() => this.saveImage( uri )} >
                                             保存する
                                         </Button>
