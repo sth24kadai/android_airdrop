@@ -14,6 +14,7 @@ export const AutoHeightImage: React.FC<{
     source: ImageURISource | ImageRequireSource
     width: number
     style?: StyleProp<ImageStyle>
+    hiddenDeleteBtn?: boolean
     onDeletePut?: (e: any) => void
 }> = (props) => {
     const { source, style, width } = props
@@ -50,9 +51,11 @@ export const AutoHeightImage: React.FC<{
     return (
         <>
             <Image source={source} resizeMode='contain' style={[{ height, width }, style]} />
-            <View style={{ position: 'absolute', right: 20, top: 0 }}>
-                <Button title="×" color="red" onPress={props.onDeletePut}></Button>
-            </View>
+            { 
+                <View style={{ position: 'absolute', right: 0, top: 0 , display : props.hiddenDeleteBtn ? 'none' : undefined }}>
+                    <Button title="×" color="red" onPress={props.onDeletePut}></Button>
+                </View>
+            }
         </>
     )
 }

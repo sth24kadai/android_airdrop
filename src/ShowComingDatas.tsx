@@ -67,7 +67,7 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
                                 this.getRecentData().map((uri, index) => (
                                     <View key={index} style={styles.containText}>
                                         { uri.startsWith('data:image/') ? (
-                                            <AutoHeightImage width={350} source={{ uri: uri }} />
+                                            <AutoHeightImage style={styles.imageStyle} width={350} source={{ uri: uri }} hiddenDeleteBtn />
                                         ) : (
                                             <div> データファイル </div>
                                         )}
@@ -88,6 +88,12 @@ export default class App extends Component<NativeStackScreenProps<RootStackParam
 }
 
 const styles = StyleSheet.create({
+    imageStyle: {
+        borderRadius: 13,
+        borderStyle: "solid",
+        borderWidth: 2,
+        borderColor: "#e3e3e3",
+    },
     baseFlexStyle: {
         display: 'flex',
         height: '100%',
@@ -102,6 +108,7 @@ const styles = StyleSheet.create({
         display: "flex",
         flexDirection: "column",
         gap: 10,
+        paddingTop: 10,
     },
     noImageText: {
         display: 'flex',

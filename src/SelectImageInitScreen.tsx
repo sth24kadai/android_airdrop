@@ -99,7 +99,21 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                             </Button>
                         </View>
                         <View style={styles.flexCenter}>
-                            {this.context.image && [...( Array.isArray( this.context.image ) ? this.context.image : [this.context.image])].map((uri, index) => (<AutoHeightImage key={index} source={{ uri: uri }} width={350} /> ))}
+                            {
+                                this.context.image && 
+                                    [...( Array.isArray( this.context.image )
+                                        ? this.context.image 
+                                        : [this.context.image])].map(
+                                            (uri, index) => (
+                                                <AutoHeightImage 
+                                                    style={styles.imageStyle} 
+                                                    key={index} 
+                                                    source={{ uri: uri }} 
+                                                    width={350} 
+                                                    onDeletePut={() => this.context.setObjectState({ image : null })} /> 
+                                            )
+                                        )
+                            }
                         </View>
                         <View style={styles.flexColumn}>
                             <Button icon="image" mode='contained-tonal' onPress={() => this.props.navigation.navigate("写真の保存")}>
@@ -135,16 +149,18 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
 }
 
 const styles = StyleSheet.create({
+    imageStyle: {
+        borderRadius: 13,
+        borderStyle: "solid",
+        borderWidth: 2,
+        borderColor: "#e3e3e3",
+    },
     flexCenter: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         marginTop: 10,
         marginBottom: 10,
-        borderRadius: 10,
-        borderStyle: "solid",
-        borderWidth: 1,
-        borderColor: "#f0f0f0",
         minHeight: 100,
         minWidth: "100%"
     },

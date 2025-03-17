@@ -69,7 +69,7 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
                 <SafeAreaView style={ styles.container }>
                     <RNScrollView>
                         <View style={styles.flexCenter}>
-                            {this.context.image && [...( Array.isArray( this.context.image ) ? this.context.image : [this.context.image])].map((uri, index) => (<AutoHeightImage key={index} source={{ uri: uri }} width={350} /> ))}
+                            {this.context.image && [...( Array.isArray( this.context.image ) ? this.context.image : [this.context.image])].map((uri, index) => (<AutoHeightImage style={styles.imageStyle} key={index} source={{ uri: uri }} width={350} hiddenDeleteBtn={true}/> ))}
                         </View>
                         <Button mode="contained-tonal" onPress={() => this.sendImage( service, this.context.image, this.context.selectedService, () => this.callback() )} disabled={this.state.isSending || !this.context.image} >
                             データを送信する
@@ -82,6 +82,12 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
 }
 
 const styles = StyleSheet.create({
+    imageStyle: {
+        borderRadius: 13,
+        borderStyle: "solid",
+        borderWidth: 2,
+        borderColor: "#e3e3e3",
+    },
     container: {
 		flex: 1,
 		marginLeft: 10,
