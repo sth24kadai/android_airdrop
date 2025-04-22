@@ -46,6 +46,10 @@ export default class QRCodeScannedScreen extends Component<
         console.log( this.context.selectedService, "fetching" )
         const user = await fetch(`http://${this.context.selectedService}:${this.HTTP_PORT}/info`)
         .catch( err => {
+            this.context.logs.push({ emoji: "🤬", message: "Failed to fetch. Fetch promise was not establish."})
+            this.context.logs.push({ emoji: "🤬", message: "Stack trase"})
+            this.context.logs.push({ emoji: "🤬", message: err})
+
             console.log(`fetch error : ${err}`)
             Notifier.showNotification({
                 title: "エラー",
@@ -58,6 +62,10 @@ export default class QRCodeScannedScreen extends Component<
         if( !( user instanceof Response ) ) return;
         console.log( user.status )
         if( user.status !== 200 ) {
+            this.context.logs.push({ emoji: "🤬", message: "Failed to fetch. HTTP response wasn't returned 200."})
+            this.context.logs.push({ emoji: "🤬", message: "HTTP STATUS trase"})
+            this.context.logs.push({ emoji: "🤬", message: user.status.toString()})
+
             Notifier.showNotification({
                 title: "エラー",
                 description: "ユーザ情報の取得に失敗しました。もう一度やり直してください。",
@@ -88,6 +96,10 @@ export default class QRCodeScannedScreen extends Component<
                 ip: this.context.ip
             })
         }).catch( err => {
+            this.context.logs.push({ emoji: "🤬", message: "Failed to fetch. Fetch promise was not establish."})
+            this.context.logs.push({ emoji: "🤬", message: "Stack trase"})
+            this.context.logs.push({ emoji: "🤬", message: err})
+
             console.log(`fetch error : ${err}`)
             Notifier.showNotification({
                 title: "エラー",
@@ -115,6 +127,10 @@ export default class QRCodeScannedScreen extends Component<
         }
 
         if( response.status !== 200 ) {
+            this.context.logs.push({ emoji: "🤬", message: "Failed to fetch. HTTP response wasn't returned 200."})
+            this.context.logs.push({ emoji: "🤬", message: "HTTP STATUS trase"})
+            this.context.logs.push({ emoji: "🤬", message: response.status.toString()})
+
             Notifier.showNotification({
                 title: "エラー",
                 description: "送信者の許可に失敗しました。もう一度やり直してください。",

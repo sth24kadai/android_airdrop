@@ -23,7 +23,9 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
     // @ts-ignore
     context !: ContextType<typeof Context>
     public state = {
-        qrURL: null
+        qrURL: null,
+        isPreviewOpen: false,
+        isQROpen: false,
     }
 
     public selectImage(e: GestureResponderEvent) {
@@ -54,6 +56,9 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                 this.context.setObjectState({
                     image: responseImage.assets.map((v) => v.uri).filter((v) => v !== null || typeof v !== "undefined") as string[]
                 })
+                this.setState({
+                    isPreviewOpen: true
+                })
             }
         })
     }
@@ -64,6 +69,12 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
     }
 
     public createShareQR() {
+        if( this.state.qrURL !== null ){
+            this.setState({
+                isQROpen: !this.state.isQROpen,
+            })
+            return;
+        }
         if (this.context.image === null) return;
         const selfIP = this.context.ip;
         if( selfIP === null ) return;
@@ -76,8 +87,10 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
         const lengthSelfIP = toHEXIP.length;
         const qrURL = `${indentifer}${mode}${lengthSelfIP}${toHEXIP}`;
         this.setState({
-            qrURL: qrURL
+            qrURL: qrURL,
+            isQROpen: true
         })
+
     }
 
     render() {
@@ -91,16 +104,26 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                             </PaperText>
                         </View>
                         <View style={styles.flexColumn}>
-                            <Button mode="contained-tonal" onPress={(e) => this.selectImage(e)}>
-                                画像を選択する
-                            </Button>           
-                            <Button mode="contained-tonal" disabled={this.state.qrURL !== null} onPress={(e) => this.props.navigation.navigate('ScanQRScreen')}>
+                            {
+                                !this.context.image && <Button mode="elevated" onPress={(e) => this.selectImage(e)}>
+                                    画像を選択する
+                                </Button>
+                            }           
+                            <Button mode="elevated" disabled={( this.state.qrURL !== null && this.state.isQROpen) } onPress={(e) => this.props.navigation.navigate('ScanQRScreen')}>
                                 共有QRコードをスキャンする
                             </Button>
+                            {
+                                this.context.image && (
+                                    <Button mode={ this.state.isPreviewOpen ? "contained-tonal" : "outlined"} onPress={() => this.setState({ isPreviewOpen: !this.state.isPreviewOpen })}>
+                                        {this.state.isPreviewOpen ? "プレビューを閉じる" : "プレビューを開く"}
+                                    </Button>
+                                )
+                            }
                         </View>
+
                         <View style={styles.flexCenter}>
                             {
-                                this.context.image && 
+                                this.state.isPreviewOpen && this.context.image && 
                                     [...( Array.isArray( this.context.image )
                                         ? this.context.image 
                                         : [this.context.image])].map(
@@ -116,9 +139,6 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                             }
                         </View>
                         <View style={styles.flexColumn}>
-                            <Button icon="image" mode='contained-tonal' onPress={() => this.props.navigation.navigate("写真の保存")}>
-                                送られてきた写真を見る
-                            </Button>
                             {this.context.image &&
                                 <Button mode="contained" onPress={() => this.selectSender()}>
                                     送信先を選択する
@@ -126,17 +146,20 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                             }
                             {this.context.image &&
                                 <Button mode="contained" onPress={() => this.createShareQR()}>
-                                    共有QRコードを表示する
+                                    共有QRコードを{ this.state.isQROpen ? "隠す" : "表示する"}
                                 </Button>
                             }
-                            {this.state.qrURL &&
+                            {this.state.isQROpen && this.state.qrURL &&
                                 <View style={styles.flexCenter}>
                                     <QRCode
                                         value={this.state.qrURL}
                                         size={200}
                                     />
                                 </View>
-                            }       
+                            }   
+                            <Button icon="image" mode='contained-tonal' onPress={() => this.props.navigation.navigate("写真の保存")}>
+                                送られてきた写真を見る
+                            </Button>    
                             <Button icon="archive" mode='contained-tonal' onPress={() => this.props.navigation.navigate('LogScreen')}>
                                 デバックログを確認する
                             </Button>

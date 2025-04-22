@@ -108,7 +108,12 @@ const styles = StyleSheet.create({
         display: "flex",
         flexDirection: "column",
         gap: 10,
-        paddingTop: 10,
+        padding: 10,
+        borderRadius: 5,
+        borderWidth: 1,
+        marginTop: 5,
+        marginBottom: 5,
+        borderColor: "#e3e3e3"
     },
     noImageText: {
         display: 'flex',

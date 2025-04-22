@@ -52,7 +52,7 @@ export const AutoHeightImage: React.FC<{
         <>
             <Image source={source} resizeMode='contain' style={[{ height, width }, style]} />
             { 
-                <View style={{ position: 'absolute', right: 0, top: 0 , display : props.hiddenDeleteBtn ? 'none' : undefined }}>
+                <View style={{ position: "absolute", right: 20, top: 0 , display : props.hiddenDeleteBtn ? 'none' : undefined, maxHeight: 50, maxWidth: 50 }}>
                     <Button title="×" color="red" onPress={props.onDeletePut}></Button>
                 </View>
             }

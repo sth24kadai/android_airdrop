@@ -66,6 +66,10 @@ export default class App extends ShardSender<null> {
 	}
 
 	private async getDeviceName(service: Service) {
+		this.state.logs.push({
+			emoji: '🔍',
+			message: `Fetching to http://${service.host}:${this.HTTP_PORT}/info`
+		})
 		const response = await fetch(`http://${service.host}:${this.HTTP_PORT}/info`,
 			{
 				method: "GET",
@@ -74,6 +78,10 @@ export default class App extends ShardSender<null> {
 				}
 			}
 		).catch((err) => {
+			this.state.logs.push({ emoji: '🤬', message: `Failed to fetch. Fetch promise was not establish.` })
+			this.state.logs.push({ emoji: '🤬', message: `Stack trase` })
+			this.state.logs.push({ emoji: '🤬', message: err })
+			
 			Notifier.showNotification({
 				title: "デバイスの詳細取得に失敗しました。",
 				description: `詳細： ${service.host}の取得に失敗しました。\n 原因：${err}`,
@@ -232,8 +240,7 @@ export default class App extends ShardSender<null> {
 				}
 			}
 
-			const raw = request.postData as string;
-			const unZip = raw
+			const unZip = request.postData as string;
 
 			const ipData =
 				typeof unZip !== "object" ? (JSON.parse(unZip)) as { ip : string } :
@@ -449,6 +456,10 @@ export default class App extends ShardSender<null> {
 			this.setState({
 				ip: v
 			}) // 自身の追跡用にIPを決定させておく
+			this.state.logs.push({
+				emoji: '📡',
+				message: `My IP Address is ${v}`
+			})
 		})
 	}
 

@@ -68,12 +68,12 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
             <SafeAreaProvider>
                 <SafeAreaView style={ styles.container }>
                     <RNScrollView>
+                        <Button style={styles.upMargin} mode="contained" onPress={() => this.sendImage( service, this.context.image, this.context.selectedService, () => this.callback() )} disabled={this.state.isSending || !this.context.image} >
+                            データを送信する
+                        </Button>
                         <View style={styles.flexCenter}>
                             {this.context.image && [...( Array.isArray( this.context.image ) ? this.context.image : [this.context.image])].map((uri, index) => (<AutoHeightImage style={styles.imageStyle} key={index} source={{ uri: uri }} width={350} hiddenDeleteBtn={true}/> ))}
                         </View>
-                        <Button mode="contained-tonal" onPress={() => this.sendImage( service, this.context.image, this.context.selectedService, () => this.callback() )} disabled={this.state.isSending || !this.context.image} >
-                            データを送信する
-                        </Button>
                     </RNScrollView>
                 </SafeAreaView>
             </SafeAreaProvider>
@@ -82,6 +82,9 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
 }
 
 const styles = StyleSheet.create({
+    upMargin: {
+        marginTop: 10,
+    },
     imageStyle: {
         borderRadius: 13,
         borderStyle: "solid",
@@ -93,6 +96,7 @@ const styles = StyleSheet.create({
 		marginLeft: 10,
 		marginRight: 10,
 		marginBottom: 10,
+        marginTop: 10,
         borderStyle: "solid",
         borderWidth: 1,
         borderColor: "#f0f0f0",
