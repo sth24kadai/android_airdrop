@@ -133,7 +133,11 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                                                     key={index} 
                                                     source={{ uri: uri }} 
                                                     width={350} 
-                                                    onDeletePut={() => this.context.setObjectState({ image : null })} /> 
+                                                    onDeletePut={() => {
+                                                        this.state.isQROpen && this.setState({ isQROpen: false })
+                                                        this.state.qrURL && this.setState({ qrURL: null })
+                                                        this.context.setObjectState({ image : null })
+                                                    }} /> 
                                             )
                                         )
                             }

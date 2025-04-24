@@ -433,8 +433,7 @@ export default class App extends ShardSender<null> {
 	}
 
 	private refreshData() {
-        const { isScanning } = this.state;
-        if (isScanning) return;
+		// if( typeof this.state.isScanning !== "undefined" && this.state.isScanning ) return;
 
         this.setObjectState({
             services: {}
