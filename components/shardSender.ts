@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from "react-native-screens/lib/typescript/native-stack/types";
-import { HTTPImageFrom, RootStackParamList } from "../types";
+import { HTTPBufferRequest, HTTPImageFrom, RootStackParamList } from "../types";
 import { Component } from "react";
 import { Service } from "react-native-zeroconf";
 import { Easing, Notifier } from "react-native-notifier";
@@ -49,7 +49,7 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
         service: Service, 
         image: string[] | string | null, 
         selectedService: string | null,
-        callbackFunction?: () => void
+        callbackFunction?: ( sentShards : HTTPBufferRequest[] ) => void
     ) {
         if (
             selectedService === null ||
@@ -60,7 +60,7 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
         this.startTime = Date.now()
 
         const imageBuffers = await this.getAllImages( image );
-        const askResponse = await fetch(`http://${service.host}:${this.HTTP_PORT}/ask`, {
+        const askResponse = await fetch(`http://${service.host}:${this.HTTP_PORT}/device/ping`, {
             method: "POST",
             headers: {
                 "Content-type": "application/json"
@@ -100,16 +100,14 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
                         imageBuffer.mineType, 
                         index + 1,
                         totalArray.length,
+                        callbackFunction
                     )
                 })
             )
-            .then(() => {
-                typeof callbackFunction != "undefined" && callbackFunction();
-            })
         }
     }
 
-    public async shardSend(rawData: Buffer, ipAddress: string, contentType: string, index: number, total : number, callback?:() => void ) {
+    public async shardSend(rawData: Buffer, ipAddress: string, contentType: string, TOTALindex: number, total : number, callback?:( sentShards : HTTPBufferRequest[] ) => void ) {
         const shards = this.shardProsessor(rawData, this.BYTES);
         const fromData = await ShardSender.fromDeviceCreate();
         const hashedFromData = Buffer.from(
@@ -138,7 +136,7 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
 
         await Promise.all(
             toStringedDatas.map(async (datum, index) => {
-                const response = await fetch(`http://${ipAddress}:${this.HTTP_PORT}/upload/shard`, {
+                const response = await fetch(`http://${ipAddress}:${this.HTTP_PORT}/stream`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -164,7 +162,15 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
                         title: `送信が完了しました。 かかった時間：${Date.now() - this.startTime} ms`,
                         description: `シャード個数 ${toStringedDatas.length} shards, トータル ${Math.round((rawData.byteLength / 1024 / 1024) * 10) / 10} MB`
                     })
-                    if( total === index ) {
+                    console.log(`total : ${total}, index : ${TOTALindex}`)
+                    if( total === TOTALindex ) {
+                        callback &&
+                        callback(
+                            toStringedDatas.map((data, index) => 
+                                 JSON.parse(data) as HTTPBufferRequest
+                            )
+                        )
+                        console.log(`typeof callbackFunction : ${typeof callback}`)
                         return Promise.resolve();
                     }
                 }

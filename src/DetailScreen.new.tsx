@@ -15,6 +15,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { AutoHeightImage } from '../components/autosizedImage'
 import { NetworkInfo } from 'react-native-network-info'
 import { ShardSender } from '../components/shardSender'
+import { HTTPBufferRequest } from '../types'
 
 
 export default class DetailScreen extends ShardSender<'DetailScreen'> {
@@ -41,9 +42,10 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
 		})
     }
 
-    callback() {
+    callback( sentShards : HTTPBufferRequest[] ) {
         this.context.setObjectState({
-            image: null
+            image: null,
+            sentShards: [ ...this.context.sentShards, ...sentShards],
         })
         this.props.navigation.navigate('SelectImageInitScreen')
     }
@@ -68,7 +70,7 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
             <SafeAreaProvider>
                 <SafeAreaView style={ styles.container }>
                     <RNScrollView>
-                        <Button style={styles.upMargin} mode="contained" onPress={() => this.sendImage( service, this.context.image, this.context.selectedService, () => this.callback() )} disabled={this.state.isSending || !this.context.image} >
+                        <Button style={styles.upMargin} mode="contained" onPress={() => this.sendImage( service, this.context.image, this.context.selectedService, ( sentShards ) => this.callback( sentShards ) )} disabled={this.state.isSending || !this.context.image} >
                             データを送信する
                         </Button>
                         <View style={styles.flexCenter}>

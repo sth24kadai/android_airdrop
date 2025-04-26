@@ -59,7 +59,8 @@ export default class App extends ShardSender<null> {
 			notification: {} as Notification,
 			showsDetailDisplay: false,
 			recivedShards: [] as HTTPBufferRequest[],
-			ip: ""
+			ip: "",
+			sentShards: [] as HTTPBufferRequest[],
 		}
 
 		this.__httpServer = void 0;
@@ -222,6 +223,7 @@ export default class App extends ShardSender<null> {
 			return ({
 				status: "OK",
 				data: {
+					version: "R1",
 					clientId: DeviceInfo.getUniqueId(),
 					clientName: DeviceInfo.getModel(),
 					clientModel: Platform.OS
@@ -229,7 +231,7 @@ export default class App extends ShardSender<null> {
 			})
 		})
 
-		httpbridge.post('/qr/please', async ( request, response ) => {
+		httpbridge.put('/stream', async ( request, response ) => {
 			console.log( request )
 			if( typeof this.state.image === "undefined" || this.state.image === null ){
 				return {
@@ -247,7 +249,7 @@ export default class App extends ShardSender<null> {
 					unZip as { ip : string }
 
 			const imageBuffers = await this.getAllImages( this.state.image );
-			const askResponse = await fetch(`http://${ipData.ip}:${this.HTTP_PORT}/ask`, {
+			const askResponse = await fetch(`http://${ipData.ip}:${this.HTTP_PORT}/device/ping`, {
 				method: "POST",
 				headers: {
 					"Content-type" : "application/json"
@@ -296,7 +298,7 @@ export default class App extends ShardSender<null> {
 			}
 		})
 
-		httpbridge.post("/ask", async (request, response) => {
+		httpbridge.post("/device/ping", async (request, response) => {
 
 			return {
 				"status": "OK",
@@ -324,7 +326,56 @@ export default class App extends ShardSender<null> {
 			}
 		})
 
-		httpbridge.post<string>("/upload/shard", async (request, response) => {
+		httpbridge.post<string>('/stream/shard', async ( request, response ) => {
+			const raw = request.postData as string;
+			const unZip = String(raw)
+			if (typeof unZip === "undefined") {
+				this.state.logs.push({
+					emoji: "📨",
+					message: `recived data is undefined`
+				})
+
+				return {
+					"status": "NG"
+				}
+			}
+			console.log(`unZip : ${unZip}, ${typeof unZip}`)
+			this.state.logs.push({
+				emoji: "📨",
+				message: `Received ${unZip.length} byte`
+			})
+			
+			const requireShardData =
+				typeof unZip !== "object" ? (JSON.parse(unZip)) as { uniqueId : string, shardIndex : number } :
+					unZip as { uniqueId : string, shardIndex : number }
+
+			console.log( requireShardData.uniqueId )
+
+			const shard = this.state.sentShards.filter(
+				( v ) => v.uniqueId === requireShardData.uniqueId && v.shardIndex === requireShardData.shardIndex
+			)
+
+			if( shard.length === 0 ){
+				this.state.logs.push({
+					emoji: "📨",
+					message: `shard not found`
+				})
+				return {
+					"status": "NG"
+				}
+			}
+			this.state.logs.push({
+				emoji: "📨",
+				message: `GET ${shard[0].shardIndex + 1} of ${shard[0].totalShards} shards from ${shard[0].from}`
+			})
+
+			return {
+				"status": "OK",
+				"data": shard
+			}
+		})
+
+		httpbridge.post<string>("/stream", async (request, response) => {
 			const raw = request.postData as string;
 			const unZip = raw
 			if (typeof unZip === "undefined") {
@@ -372,9 +423,15 @@ export default class App extends ShardSender<null> {
 
 			console.log(`-----> Received ${postJSONData.shardIndex + 1} of ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`)
 
-			if (this.state.recivedShards.length === postJSONData.totalShards) {
+			const reciveShards = this.state.recivedShards.filter(
+				( v ) => v.uniqueId === postJSONData.uniqueId
+			)
+			if (reciveShards.length === postJSONData.totalShards) {
 				console.log(Math.round(new Date().getTime() / 1000))
-
+				this.state.logs.push({
+					emoji: "🔥",
+					message: `UniqueId : ${reciveShards[0].uniqueId}`
+				})
 				this.state.logs.push({
 					emoji: "📨",
 					message: `Received ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`

@@ -87,8 +87,8 @@ export default class QRCodeScannedScreen extends Component<
 
     async checkSenderClient() {
         console.log( this.context.selectedService )
-        const response = await fetch(`http://${this.context.selectedService}:${this.HTTP_PORT}/qr/please`, {
-            method: "POST",
+        const response = await fetch(`http://${this.context.selectedService}:${this.HTTP_PORT}/stream`, {
+            method: "PUT",
             headers: {
                 "Content-Type": "application/json"
             },
