@@ -10,6 +10,11 @@ const {
     showNotification
 } = Notifier;
 
+/**
+ * Implements shard sending functionality
+ * 
+ * This class extends React.Component and provides methods to send images in shards to a specified service.
+ */
 export class ShardSender<T extends (keyof RootStackParamList) | null> extends Component<
     T extends keyof RootStackParamList ? NativeStackScreenProps<RootStackParamList, T>
     : {}
