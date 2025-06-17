@@ -12,7 +12,7 @@ import { Notifier, Easing } from 'react-native-notifier';
 
 
 
-export default class App extends Component<NativeStackScreenProps<RootStackParamList, '写真の保存'>> {
+export default class ShowComingDatas extends Component<NativeStackScreenProps<RootStackParamList, '写真の保存'>> {
 
     static contextType = Context;
     //@ts-ignore
