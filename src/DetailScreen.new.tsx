@@ -5,6 +5,7 @@ import {
     StyleSheet,
     View,
     ScrollView as RNScrollView,
+    GestureResponderEvent,
 } from 'react-native'
 import {
     Button,
@@ -16,6 +17,7 @@ import { AutoHeightImage } from '../components/autosizedImage'
 import { NetworkInfo } from 'react-native-network-info'
 import { ShardSender } from '../components/shardSender'
 import { HTTPBufferRequest } from '../types'
+import { Service } from 'react-native-zeroconf'
 
 
 export default class DetailScreen extends ShardSender<'DetailScreen'> {
@@ -50,6 +52,25 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
         this.props.navigation.navigate('SelectImageInitScreen')
     }
 
+    onButtonPress( service: Service & { clientName : string, clientModel : string } ) {
+
+        if( service === null ){
+            this.context.logs.push({ emoji: "🤬", message: "サービスが選択されていません。" })
+            return;
+        }
+
+        this.setState({
+            isSending: true
+        })
+
+        this.sendImage(
+            service,
+            this.context.image,
+            this.context.selectedService,
+            ( sentShards ) => this.callback( sentShards )
+        )
+    }
+
     render() {
 
         const { services, selectedService } = this.context;
@@ -70,11 +91,30 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
             <SafeAreaProvider>
                 <SafeAreaView style={ styles.container }>
                     <RNScrollView>
-                        <Button style={styles.upMargin} mode="contained" onPress={() => this.sendImage( service, this.context.image, this.context.selectedService, ( sentShards ) => this.callback( sentShards ) )} disabled={this.state.isSending || !this.context.image} >
+                        <Button 
+                            style={styles.upMargin} 
+                            mode="contained" 
+                            onPress={() => this.onButtonPress( service )} 
+                            disabled={this.state.isSending || !this.context.image} 
+                        >
                             データを送信する
                         </Button>
                         <View style={styles.flexCenter}>
-                            {this.context.image && [...( Array.isArray( this.context.image ) ? this.context.image : [this.context.image])].map((uri, index) => (<AutoHeightImage style={styles.imageStyle} key={index} source={{ uri: uri }} width={350} hiddenDeleteBtn={true}/> ))}
+                            {
+                                this.context.image && [
+                                    ...( Array.isArray( this.context.image ) ? this.context.image : [this.context.image])
+                                ].map(
+                                    (uri, index) => (
+                                        <AutoHeightImage 
+                                            style={styles.imageStyle} 
+                                            key={index} 
+                                            source={{ uri: uri }} 
+                                            width={350} 
+                                            hiddenDeleteBtn={true}
+                                        /> 
+                                    )
+                                )
+                            }
                         </View>
                     </RNScrollView>
                 </SafeAreaView>
