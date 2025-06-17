@@ -1,6 +1,6 @@
 // #region Imports
 import 'react-native-gesture-handler'
-import React, { Component } from 'react'
+import React from 'react'
 import { Platform } from 'react-native'
 import type { Service } from 'react-native-zeroconf'
 import { NavigationContainer } from '@react-navigation/native'
@@ -8,23 +8,30 @@ import { createStackNavigator } from '@react-navigation/stack'
 import { Buffer } from 'buffer';
 import { BridgeServer } from 'react-native-http-bridge-refurbished'
 import DeviceInfo from 'react-native-device-info'
-
-import { RootStackParamList, InternalState, Notification, HTTPImageFrom, HTTPBufferRequest } from './types'
-
-import { Context } from './components/context'
-
-import HomeScreen from './src/HomeScreen.new'
-import DetailScreen from "./src/DetailScreen.new";
-import LogScreen from './src/logScreen'
-import ComingData from "./src/ShowComingDatas"
 import { NotifierWrapper, Notifier } from 'react-native-notifier'
 import { NetworkInfo } from 'react-native-network-info'
 import Zeroconf from 'react-native-zeroconf'
-import SelectSenderScreen from './src/SelectSenderScreen'
-import SelectImageInitScreen from './src/SelectImageInitScreen'
-import QR from './src/ScanQRScreen'
-import QRCodeScannedScreen from './src/QRCodeScannedScreen'
-import { ShardSender } from './components/shardSender'
+
+import { 
+	RootStackParamList, 
+	InternalState, 
+	Notification, 
+	HTTPImageFrom, 
+	HTTPBufferRequest 
+} from './types'
+import { 
+	Context, 
+	ShardSender
+} from './components'
+import {
+	DetailScreen,
+	LogScreen,
+	ShowComingDatas as ComingData,
+	SelectSenderScreen,
+	SelectImageInitScreen,
+	QRCodeScannedScreen,
+	ScanQRCodes as QR,
+} from './src'
 
 
 
@@ -551,10 +558,6 @@ export default class App extends ShardSender<null> {
 							<Stack.Screen
 								name="ScanQRScreen"
 								component={QR}
-							/>
-							<Stack.Screen
-								name="デバイスの選択"
-								component={HomeScreen}
 							/>
 							<Stack.Screen
 								name="DetailScreen"
