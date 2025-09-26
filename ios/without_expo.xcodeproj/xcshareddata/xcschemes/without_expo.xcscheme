@@ -15,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DCE515D32E85453D00144692"
+               BlueprintIdentifier = "DCE26E982E86896A00A1DF01"
                BuildableName = "without_expo.app"
                BlueprintName = "without_expo"
                ReferencedContainer = "container:without_expo.xcodeproj">
@@ -44,7 +44,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "DCE515D32E85453D00144692"
+            BlueprintIdentifier = "DCE26E982E86896A00A1DF01"
             BuildableName = "without_expo.app"
             BlueprintName = "without_expo"
             ReferencedContainer = "container:without_expo.xcodeproj">
@@ -61,7 +61,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "DCE515D32E85453D00144692"
+            BlueprintIdentifier = "DCE26E982E86896A00A1DF01"
             BuildableName = "without_expo.app"
             BlueprintName = "without_expo"
             ReferencedContainer = "container:without_expo.xcodeproj">
