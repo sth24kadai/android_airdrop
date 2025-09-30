@@ -1,7 +1,7 @@
 import { Component, ContextType } from "react";
 import { NativeStackScreenProps } from 'react-native-screens/lib/typescript/native-stack/types';
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { View, StyleSheet, GestureResponderEvent } from "react-native";
+import { View, StyleSheet, GestureResponderEvent, Text } from "react-native";
 import { ScrollView as RNScrollView } from 'react-native-gesture-handler';
 import { Button, Text as PaperText } from "react-native-paper";
 import { ImageLibraryOptions, launchImageLibrary } from "react-native-image-picker";
@@ -10,6 +10,7 @@ import { RootStackParamList } from "../types";
 import { Context } from '../components/context';
 import { AutoHeightImage } from "../components/autosizedImage";
 import QRCode from "react-native-qrcode-svg";
+import { pick } from "@react-native-documents/picker";
 
 export default class SelectImageInitScreen extends Component<NativeStackScreenProps<RootStackParamList, 'SelectImageInitScreen'>> {
 
@@ -25,7 +26,35 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
     public state = {
         qrURL: null,
         isPreviewOpen: false,
+        isFile: false,
         isQROpen: false,
+    }
+
+    public async selectFile( e: GestureResponderEvent ){
+        try {
+            const [ result ] = await pick({
+                mode: "open"
+            })
+
+            if( !result ) return;
+            if( !result.uri ) return;
+
+            console.log( result.uri );
+            const isImage = /jpg|jpeg|png|gif|bmp|webp|tiff|svg|image/i.test( result.uri );
+
+            this.context.setObjectState({
+                image: [{
+                    uri: result.uri,
+                    isFile: !isImage
+                }]
+            })
+            this.setState({
+                isFile: true,
+                isPreviewOpen: true
+            })
+        } catch( e ){
+            console.error( e )
+        }
     }
 
     public selectImage(e: GestureResponderEvent) {
@@ -54,7 +83,7 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                 ) return;
 
                 this.context.setObjectState({
-                    image: responseImage.assets.map((v) => v.uri).filter((v) => v !== null || typeof v !== "undefined") as string[]
+                    image: responseImage.assets.map((v) => ({ uri : v.uri, isFile: false })).filter((v) => v !== null || typeof v !== "undefined") as { uri: string, isFile: boolean }[]
                 })
                 this.setState({
                     isPreviewOpen: true
@@ -105,7 +134,7 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                         </View>
                         <View style={styles.flexColumn}>
                             {
-                                !this.context.image && <Button mode="elevated" onPress={(e) => this.selectImage(e)}>
+                                !this.context.image && <Button mode="elevated" onPress={(e) => this.selectFile(e)}>
                                     画像を選択する
                                 </Button>
                             }           
@@ -128,10 +157,11 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                                         ? this.context.image 
                                         : [this.context.image])].map(
                                             (uri, index) => (
+                                                uri.isFile ? <Text key={index}> File </Text> :
                                                 <AutoHeightImage 
                                                     style={styles.imageStyle} 
                                                     key={index} 
-                                                    source={{ uri: uri }} 
+                                                    source={{ uri: uri.uri}} 
                                                     width={350} 
                                                     onDeletePut={() => {
                                                         this.state.isQROpen && this.setState({ isQROpen: false })

@@ -6,6 +6,8 @@ import { Easing, Notifier } from "react-native-notifier";
 import DeviceInfo from "react-native-device-info";
 import { Platform } from "react-native";
 import { Buffer } from "buffer";
+import RNFS from "react-native-fs";
+import { getFileTypeFromBuffer } from "./getFileTypeFromBuffer";
 const {
     showNotification
 } = Notifier;
@@ -25,21 +27,52 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
     public isSending: boolean = false
     public startTime: number = 0
 
+    public getFileTypeFromBuffer(buffer: Uint8Array): string | null {
+        return getFileTypeFromBuffer(buffer);
+    }
 
-    public async getAllImages( paths : string[] | string ): Promise<{ mineType: string, buffer: Buffer }[]> {
-        const path = ( Array.isArray( paths ) ? paths : [paths])
-       
-        const url = await Promise.all( path.map( async ( path ) => {
-            const response = await fetch( path )
-            const buff = Buffer.from( await response.arrayBuffer() );
-            return {
-                buff,
-                mineType: response.headers.get('content-type')?.toLocaleLowerCase() || "image/png",
-            }
-        }))
-        return url.map( ( data ) => ({
-            buffer: Buffer.from( data.buff ),
-            mineType: data.mineType
+    public async __fetch_file_for_android__(fileUri: string): Promise<{ buf: Buffer, mineType: string }> {
+        const result = await RNFS.readFile(fileUri, "base64");
+        const buffer = Buffer.from(result, 'base64');
+        console.log(`Read file from ${fileUri}, size: ${buffer.byteLength} bytes`)
+        const mineType = this.getFileTypeFromBuffer(new Uint8Array(buffer));
+        if (typeof mineType === "undefined") {
+            return { buf: buffer, mineType: "image/png" };
+        }
+        return { buf: buffer, mineType: mineType ?? "image/png" };
+    }
+
+    public async getAllImages(paths: { uri: string, isFile: boolean }[] | { uri: string, isFile: boolean }): Promise<{ mineType: string, buffer: Buffer }[]> {
+        const path = (Array.isArray(paths) ? paths : [paths])
+
+        const url = await Promise.all(
+            path.map(async (path) => {
+                if (!path.uri) return;
+                if (path.uri.startsWith("content://") && Platform.OS === "android") {
+                    const buff = await this.__fetch_file_for_android__(path.uri);
+                    // console.log( buff.buf.toString("base64") );
+                    return {
+                        buff: buff.buf,
+                        mineType: buff.mineType,
+                        isFile: path.isFile
+                    };
+                } else {
+                    const response = await fetch(path?.uri.replace("file:///", "file:/") || "");
+                    if (!response.ok) throw new Error(`Failed to fetch image from ${path?.uri || ""}`);
+                    const buff = Buffer.from(await response.arrayBuffer());
+                    return {
+                        buff,
+                        mineType: response.headers.get('content-type')?.toLocaleLowerCase() || "image/png",
+                        isFile: path.isFile
+                    }
+                }
+            })
+                .filter(async (v) => typeof (await v) !== "undefined") as Promise<{ buff: Buffer, mineType: string, isFile: boolean }>[]
+        );
+        return url.map((data) => ({
+            buffer: data.buff,
+            mineType: data.mineType,
+            isFile: data.isFile
         }));
     }
 
@@ -49,22 +82,26 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
      * @param image URL
      * @param selectedService String
      * @returns 
-     */   
+     */
     public async sendImage(
-        service: Service, 
-        image: string[] | string | null, 
+        service: Service,
+        image: { uri: string, isFile: boolean }[] | { uri: string, isFile: boolean } | null,
         selectedService: string | null,
-        callbackFunction?: ( sentShards : HTTPBufferRequest[] ) => void
+        callbackFunction?: (sentShards: HTTPBufferRequest[]) => void
     ) {
         if (
             selectedService === null ||
             image === null
         ) return;
 
+
         this.isSending = true
         this.startTime = Date.now()
 
-        const imageBuffers = await this.getAllImages( image );
+        const imageBuffers = await this.getAllImages(image);
+        console.log(imageBuffers.map(v => v.mineType).join(", "))
+        console.log(imageBuffers.map(v => v.buffer.toString("base64")).join(", "))
+        console.log(`Fetched ${imageBuffers.length} images to send. ${imageBuffers.reduce((acc, v) => acc + v.buffer.byteLength, 0)} bytes`)
         const askResponse = await fetch(`http://${service.host}:${this.HTTP_PORT}/device/ping`, {
             method: "POST",
             headers: {
@@ -100,9 +137,9 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
             await Promise.all(
                 imageBuffers.map(async (imageBuffer, index, totalArray) => {
                     await this.shardSend(
-                        imageBuffer.buffer, 
-                        service.host, 
-                        imageBuffer.mineType, 
+                        imageBuffer.buffer,
+                        service.host,
+                        imageBuffer.mineType,
                         index + 1,
                         totalArray.length,
                         callbackFunction
@@ -112,14 +149,21 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
         }
     }
 
-    public async shardSend(rawData: Buffer, ipAddress: string, contentType: string, TOTALindex: number, total : number, callback?:( sentShards : HTTPBufferRequest[] ) => void ) {
+    public async shardSend(
+        rawData: Buffer,
+        ipAddress: string,
+        contentType: string,
+        TOTALindex: number,
+        total: number,
+        callback?: (sentShards: HTTPBufferRequest[]) => void
+    ) {
         const shards = this.shardProsessor(rawData, this.BYTES);
         const fromData = await ShardSender.fromDeviceCreate();
         const hashedFromData = Buffer.from(
             JSON.stringify(fromData)
         ).toString("base64")
 
-        const uniqueSendID = ( Date.now() + Math.round( Math.random() * 100 ) ).toString(16)
+        const uniqueSendID = (Date.now() + Math.round(Math.random() * 100)).toString(16)
 
         const toStringedDatas = await Promise.all(
             shards.map(async (shard, index) => {
@@ -168,13 +212,13 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
                         description: `シャード個数 ${toStringedDatas.length} shards, トータル ${Math.round((rawData.byteLength / 1024 / 1024) * 10) / 10} MB`
                     })
                     console.log(`total : ${total}, index : ${TOTALindex}`)
-                    if( total === TOTALindex ) {
+                    if (total === TOTALindex) {
                         callback &&
-                        callback(
-                            toStringedDatas.map((data, index) => 
-                                 JSON.parse(data) as HTTPBufferRequest
+                            callback(
+                                toStringedDatas.map((data, index) =>
+                                    JSON.parse(data) as HTTPBufferRequest
+                                )
                             )
-                        )
                         console.log(`typeof callbackFunction : ${typeof callback}`)
                         return Promise.resolve();
                     }
@@ -194,11 +238,11 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
         return shards
     }
 
-    public static async fromDeviceCreate() : Promise< HTTPImageFrom > {
+    public static async fromDeviceCreate(): Promise<HTTPImageFrom> {
         return ({
-			id: await DeviceInfo.getUniqueId(),
-			name: DeviceInfo.getModel(),
-			model: Platform.OS
-		})
+            id: await DeviceInfo.getUniqueId(),
+            name: DeviceInfo.getModel(),
+            model: Platform.OS
+        })
     }
 }

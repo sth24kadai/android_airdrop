@@ -5,7 +5,7 @@ import {
     StyleSheet,
     View,
     ScrollView as RNScrollView,
-    GestureResponderEvent,
+    Text,
 } from 'react-native'
 import {
     Button,
@@ -105,10 +105,13 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
                                     ...( Array.isArray( this.context.image ) ? this.context.image : [this.context.image])
                                 ].map(
                                     (uri, index) => (
+                                        uri.isFile ? (
+                                            <Text> File </Text>
+                                        ) : 
                                         <AutoHeightImage 
                                             style={styles.imageStyle} 
                                             key={index} 
-                                            source={{ uri: uri }} 
+                                            source={{ uri: uri.uri }} 
                                             width={350} 
                                             hiddenDeleteBtn={true}
                                         /> 

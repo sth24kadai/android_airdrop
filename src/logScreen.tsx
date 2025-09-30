@@ -27,7 +27,7 @@ export default class LogScreen extends React.Component<NativeStackScreenProps<Ro
                         {this.context.logs.reverse().map((log, index) => (
                             <View style={styles.flexLog} key={"v" + index}>
                                 <Text key={index} style={styles.logs}>{log.emoji}</Text>
-                                <Text key={"k" + index} style={styles.json}>{log.message}</Text>
+                                <Text key={"k" + index} style={styles.json}>{String(log.message)}</Text>
                             </View>
                         ))}
 						<PaperButton icon="delete" mode='contained-tonal' onPress={() => this.context.setObjectState({ logs: [] })}>

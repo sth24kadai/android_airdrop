@@ -9,7 +9,7 @@ export const Context = React.createContext({
     recivedDatas : [] as { from : string, bytes : number, data : Buffer, uri : string }[],
     logs: [] as { emoji: string, message: string }[],
     showLogs: false,
-    image: "" as string[] | string | null,
+    image: {} as { uri: string, isFile : boolean }[] | { uri: string, isFile : boolean } | null,
     notification: {} as Notification | null,
     showsDetailDisplay : false,
     recivedShards : [] as HTTPBufferRequest[],

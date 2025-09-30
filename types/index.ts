@@ -10,7 +10,7 @@ export interface InternalState {
 		message: string
 	}[],
 	showLogs: boolean,
-	image: string[] | string | null,
+	image: { uri: string, isFile : boolean }[] | { uri: string, isFile : boolean } | null
 	notification: Notification | null
 	showsDetailDisplay : boolean 
 	recivedDatas : { from : string, bytes : number, data : Buffer, uri: string, uniqueGroupIndex: string }[]

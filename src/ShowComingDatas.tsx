@@ -9,6 +9,7 @@ import { Button, Text } from "react-native-paper";
 import { AutoHeightImage } from "../components/autosizedImage";
 import RNFS from "react-native-fs";
 import { Notifier, Easing } from 'react-native-notifier';
+import { getFileTypeFromBuffer } from "../components/getFileTypeFromBuffer";
 
 
 
@@ -18,19 +19,19 @@ export default class ShowComingDatas extends Component<NativeStackScreenProps<Ro
     //@ts-ignore
     context!: React.ContextType<typeof Context>
 
-    getRecentData() : string[] {
+    getRecentData(): string[] {
         const { recivedDatas } = this.context;
         if (recivedDatas.length === 0) {
             return [];
         }
-        return recivedDatas.map( ( data ) => data.uri );
+        return recivedDatas.map((data) => data.uri);
     }
 
-    getBase64URI() : string[] {
-        return this.getRecentData().filter( ( uri ) => uri.startsWith('data:image/') );
+    public getFileTypeFromBuffer(buffer: Uint8Array): string | null {
+        return getFileTypeFromBuffer( buffer )
     }
 
-    saveImage( base64 : string ) {
+    saveImage(base64: string) {
         const base64URI = base64;
         if (base64URI.length === 0) {
             return;
@@ -66,12 +67,12 @@ export default class ShowComingDatas extends Component<NativeStackScreenProps<Ro
                             this.getRecentData().length > 0 ? (
                                 this.getRecentData().map((uri, index) => (
                                     <View key={index} style={styles.containText}>
-                                        { uri.startsWith('data:image/') ? (
+                                        {uri.startsWith('data:image/') ? (
                                             <AutoHeightImage style={styles.imageStyle} width={350} source={{ uri: uri }} hiddenDeleteBtn />
                                         ) : (
-                                            <div> データファイル </div>
+                                            <Text> データファイル </Text>
                                         )}
-                                        <Button mode="contained-tonal" onPress={() => this.saveImage( uri )} >
+                                        <Button mode="contained-tonal" onPress={() => this.saveImage(uri)} >
                                             保存する
                                         </Button>
                                     </View>
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
         alignContent: 'center',
         textAlign: 'center',
     },
-    containText : {
+    containText: {
         display: "flex",
         flexDirection: "column",
         gap: 10,
