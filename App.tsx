@@ -59,7 +59,7 @@ export default class App extends ShardSender<null> {
 			isScanning: false,
 			selectedService: null,
 			services: {} as { [key: string]: Service & { clientName: string, clientModel: string } },
-			recivedDatas: [] as { from: string, bytes: number, data: Buffer, uri: string, uniqueGroupIndex: string }[],
+			recivedDatas: [] as { from: string, bytes: number, data: Buffer, uri: string, uniqueGroupIndex: string, name: string }[],
 			logs: [],
 			showLogs: false,
 			image: null,
@@ -321,6 +321,7 @@ export default class App extends ShardSender<null> {
 							imageBuffer.mineType, 
 							index + 1,
 							totalArray.length,
+							imageBuffer.name
 						)
 					})
 				)
@@ -442,7 +443,7 @@ export default class App extends ShardSender<null> {
 				postJSONData ? Buffer.from(postJSONData.from, "base64").toString("utf-8") : JSON.stringify({ name: "unknown", id: "unknown" })
 			) as HTTPImageFrom
 
-			console.log(`Recieve : ${Buffer.from(postJSONData.uri.split(',').map(v => +v)).byteLength} byte`)
+			console.log(`Recieve ${postJSONData.imgType} / ${Buffer.from(postJSONData.uri.split(',').map(v => +v)).byteLength} byte`)
 
 			this.state.recivedShards.push({
 				from: postJSONData.from,
@@ -455,7 +456,8 @@ export default class App extends ShardSender<null> {
 				status: "Shards",
 				index: postJSONData.index,
 				uniqueId: postJSONData.uniqueId,
-				totalImageIndex: postJSONData.totalImageIndex
+				totalImageIndex: postJSONData.totalImageIndex,
+				name: postJSONData.name
 			})
 
 			console.log(`-----> Received ${postJSONData.shardIndex + 1} of ${postJSONData.totalShards} shards from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`)
@@ -468,7 +470,7 @@ export default class App extends ShardSender<null> {
 				console.log(Math.round(new Date().getTime() / 1000))
 				this.state.logs.push({
 					emoji: "🔥",
-					message: `UniqueId : ${reciveShards[0].uniqueId}`
+					message: `UniqueId : ${reciveShards[0].uniqueId} fileName: ${reciveShards[0].name} All shards received. Start combining...`
 				})
 				this.state.logs.push({
 					emoji: "📨",
@@ -488,7 +490,12 @@ export default class App extends ShardSender<null> {
 					[...shards.sort((a, b) => a.shardIndex - b.shardIndex).map((shard) => shard.data)],
 				)
 
-				const mineType = this.getFileTypeFromBuffer(new Uint8Array(data)) ?? "application/octet-stream"
+				const mineType = this.getFileTypeFromBuffer(new Uint8Array(data)) ?? postJSONData.imgType ??"application/octet-stream"
+
+				this.state.logs.push({
+					emoji: "📦",
+					message: `All shards combined ${data.byteLength} bytes, type: ${mineType}`
+				})
 				
 				console.log(`-----> Received ${data.byteLength} bytes of data from ${deviceInfomationfromHash.name}(${deviceInfomationfromHash.id})`)
 				const toBase64URI = `data:${mineType};base64,${data.toString("base64")}`
@@ -502,7 +509,8 @@ export default class App extends ShardSender<null> {
 					bytes: data.byteLength,
 					data: data,
 					uri: toBase64URI,
-					uniqueGroupIndex: postJSONData.from+"-"+postJSONData.index+"-"+Math.round( new Date().getTime() / 1000 )
+					uniqueGroupIndex: postJSONData.from+"-"+postJSONData.index+"-"+Math.round( new Date().getTime() / 1000 ),
+					name: postJSONData.name
 				})
 				
 			}

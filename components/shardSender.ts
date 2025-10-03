@@ -36,13 +36,14 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
         const buffer = Buffer.from(result, 'base64');
         console.log(`Read file from ${fileUri}, size: ${buffer.byteLength} bytes`)
         const mineType = this.getFileTypeFromBuffer(new Uint8Array(buffer));
+        console.log(`Detected mime type: ${mineType}`)
         if (typeof mineType === "undefined") {
-            return { buf: buffer, mineType: "image/png" };
+            return { buf: buffer, mineType: "application/octet-stream" };
         }
-        return { buf: buffer, mineType: mineType ?? "image/png" };
+        return { buf: buffer, mineType: mineType ?? "application/octet-stream" };
     }
 
-    public async getAllImages(paths: { uri: string, isFile: boolean }[] | { uri: string, isFile: boolean }): Promise<{ mineType: string, buffer: Buffer }[]> {
+    public async getAllImages(paths: { uri: string, isFile: boolean, name: string }[] | { uri: string, isFile: boolean, name: string }): Promise<{ mineType: string, buffer: Buffer, name: string }[]> {
         const path = (Array.isArray(paths) ? paths : [paths])
 
         const url = await Promise.all(
@@ -50,11 +51,11 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
                 if (!path.uri) return;
                 if (path.uri.startsWith("content://") && Platform.OS === "android") {
                     const buff = await this.__fetch_file_for_android__(path.uri);
-                    // console.log( buff.buf.toString("base64") );
                     return {
                         buff: buff.buf,
                         mineType: buff.mineType,
-                        isFile: path.isFile
+                        isFile: path.isFile,
+                        name: path.name
                     };
                 } else {
                     const response = await fetch(path?.uri.replace("file:///", "file:/") || "");
@@ -63,16 +64,18 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
                     return {
                         buff,
                         mineType: response.headers.get('content-type')?.toLocaleLowerCase() || "image/png",
-                        isFile: path.isFile
+                        isFile: path.isFile,
+                        name: path.name
                     }
                 }
             })
-                .filter(async (v) => typeof (await v) !== "undefined") as Promise<{ buff: Buffer, mineType: string, isFile: boolean }>[]
+                .filter(async (v) => typeof (await v) !== "undefined") as Promise<{ buff: Buffer, mineType: string, isFile: boolean, name: string }>[]
         );
         return url.map((data) => ({
             buffer: data.buff,
             mineType: data.mineType,
-            isFile: data.isFile
+            isFile: data.isFile,
+            name: data.name
         }));
     }
 
@@ -85,7 +88,7 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
      */
     public async sendImage(
         service: Service,
-        image: { uri: string, isFile: boolean }[] | { uri: string, isFile: boolean } | null,
+        image: { uri: string, isFile: boolean, name: string }[] | { uri: string, isFile: boolean, name: string } | null,
         selectedService: string | null,
         callbackFunction?: (sentShards: HTTPBufferRequest[]) => void
     ) {
@@ -99,8 +102,7 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
         this.startTime = Date.now()
 
         const imageBuffers = await this.getAllImages(image);
-        console.log(imageBuffers.map(v => v.mineType).join(", "))
-        console.log(imageBuffers.map(v => v.buffer.toString("base64")).join(", "))
+        console.log(imageBuffers.map((v, i) => `${i}: ${v.mineType}`).join(", "))
         console.log(`Fetched ${imageBuffers.length} images to send. ${imageBuffers.reduce((acc, v) => acc + v.buffer.byteLength, 0)} bytes`)
         const askResponse = await fetch(`http://${service.host}:${this.HTTP_PORT}/device/ping`, {
             method: "POST",
@@ -136,12 +138,14 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
             if (typeof imageBuffers === "undefined") return;
             await Promise.all(
                 imageBuffers.map(async (imageBuffer, index, totalArray) => {
+                    console.log(`Sending image ${index + 1} of ${totalArray.length}, ${imageBuffer.name} size: ${imageBuffer.buffer.byteLength} bytes, type: ${imageBuffer.mineType}`)
                     await this.shardSend(
                         imageBuffer.buffer,
                         service.host,
                         imageBuffer.mineType,
                         index + 1,
                         totalArray.length,
+                        imageBuffer.name,
                         callbackFunction
                     )
                 })
@@ -155,6 +159,7 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
         contentType: string,
         TOTALindex: number,
         total: number,
+        name: string,
         callback?: (sentShards: HTTPBufferRequest[]) => void
     ) {
         const shards = this.shardProsessor(rawData, this.BYTES);
@@ -176,7 +181,8 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
                     imgType: contentType,
                     totalImageIndex: total,
                     uniqueId: uniqueSendID,
-                    index: index
+                    index: index,
+                    name: name,
                 }
                 const stringifyData = JSON.stringify(requestObject)
                 return stringifyData
