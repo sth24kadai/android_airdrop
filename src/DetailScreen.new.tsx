@@ -16,7 +16,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { AutoHeightImage } from '../components/autosizedImage'
 import { NetworkInfo } from 'react-native-network-info'
 import { ShardSender } from '../components/shardSender'
-import { HTTPBufferRequest } from '../types'
+import { HTTPBufferRequest, RootStackParamList } from '../types'
 import { Service } from 'react-native-zeroconf'
 
 
@@ -33,8 +33,11 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
     public state = {
         isSending : false,
         startTime : 0,
-        ip : ""
+        ip : "",
+        estimate : 0
     }
+
+    public timer : NodeJS.Timeout | null = null
 
     componentDidMount(): void {
         NetworkInfo.getIPV4Address().then(v => {
@@ -42,6 +45,23 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
 				ip: v
 			}) // 自身の追跡用にIPを決定させておく
 		})
+
+        this.timer = setInterval( () => {
+            if( this.state.isSending ){
+                if( this.estimate !== this.state.estimate ){
+                    this.setState({
+                        estimate: this.estimate
+                    })
+                }
+            }
+        }, 500 )
+    }
+
+    componentWillUnmount(): void {
+        if( this.timer ){
+            clearInterval( this.timer )
+            this.timer = null
+        }
     }
 
     callback( sentShards : HTTPBufferRequest[] ) {
@@ -119,6 +139,14 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
                                 )
                             }
                         </View>
+                        {
+                            this.state.isSending && (
+                                <View style={styles.statusComponent}>
+                                    <PaperText>送信中...</PaperText>
+                                    <PaperText>推定残り時間: { Math.round( this.state.estimate / 1000 ) }秒</PaperText>
+                                </View>
+                            )
+                        }
                     </RNScrollView>
                 </SafeAreaView>
             </SafeAreaProvider>
@@ -127,6 +155,18 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
 }
 
 const styles = StyleSheet.create({
+    statusComponent : {
+        flexDirection : "row",
+        justifyContent : "space-between",
+        alignItems : "center",
+        marginTop : 10,
+        marginBottom : 10,
+        borderRadius : 13,
+        borderStyle : "solid",
+        borderWidth : 2,
+        borderColor : "#e3e3e3",
+        padding : 10,
+    },
     upMargin: {
         marginTop: 10,
     },

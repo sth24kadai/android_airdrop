@@ -1,9 +1,9 @@
 
 
-import { Component, ContextType , Fragment} from "react";
+import { Component, ContextType } from "react";
 import { NativeStackScreenProps } from 'react-native-screens/lib/typescript/native-stack/types';
-import { View, StyleSheet, GestureResponderEvent } from "react-native";
-import { Button, Text as PaperText } from "react-native-paper";
+import { StyleSheet } from "react-native";
+import { Text as PaperText } from "react-native-paper";
 
 import { RootStackParamList } from "../types";
 import { Context } from '../components/context';

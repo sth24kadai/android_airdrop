@@ -7,7 +7,7 @@ import DeviceInfo from "react-native-device-info";
 import { Platform } from "react-native";
 import { Buffer } from "buffer";
 import RNFS from "react-native-fs";
-import { getFileTypeFromBuffer } from "./getFileTypeFromBuffer";
+import { getFileTypeFromBuffer, calcuateEstimate } from "./";
 const {
     showNotification
 } = Notifier;
@@ -26,6 +26,8 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
 
     public isSending: boolean = false
     public startTime: number = 0
+    public estimate: number = 0
+    private sendedShardLength: number = 0
 
     public getFileTypeFromBuffer(buffer: Uint8Array): string | null {
         return getFileTypeFromBuffer(buffer);
@@ -136,6 +138,7 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
             })
 
             if (typeof imageBuffers === "undefined") return;
+            this.sendedShardLength = 0;
             await Promise.all(
                 imageBuffers.map(async (imageBuffer, index, totalArray) => {
                     console.log(`Sending image ${index + 1} of ${totalArray.length}, ${imageBuffer.name} size: ${imageBuffer.buffer.byteLength} bytes, type: ${imageBuffer.mineType}`)
@@ -209,6 +212,13 @@ export class ShardSender<T extends (keyof RootStackParamList) | null> extends Co
                         showEasing: Easing.ease,
                         hideEasing: Easing.ease,
                     })
+                } else {
+                    this.sendedShardLength++;
+                    this.estimate = calcuateEstimate(
+                        toStringedDatas.length,
+                        this.sendedShardLength,
+                        this.estimate
+                    )
                 }
 
                 if (toStringedDatas.length === index + 1) {

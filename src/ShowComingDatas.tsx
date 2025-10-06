@@ -2,9 +2,8 @@ import { Component } from "react";
 import { NativeStackScreenProps } from "react-native-screens/lib/typescript/native-stack/types";
 import { RootStackParamList } from "../types";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { Image, ScrollView, StyleSheet, View } from "react-native"
+import { ScrollView, StyleSheet, View } from "react-native"
 import { Context } from "../components/context";
-import { Buffer } from 'buffer';
 import { Button, Text } from "react-native-paper";
 import { AutoHeightImage } from "../components/autosizedImage";
 import RNFS from "react-native-fs";

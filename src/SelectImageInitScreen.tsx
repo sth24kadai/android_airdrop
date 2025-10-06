@@ -4,7 +4,6 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { View, StyleSheet, GestureResponderEvent, Text } from "react-native";
 import { ScrollView as RNScrollView } from 'react-native-gesture-handler';
 import { Button, Text as PaperText } from "react-native-paper";
-import { ImageLibraryOptions, launchImageLibrary } from "react-native-image-picker";
 
 import { RootStackParamList } from "../types";
 import { Context } from '../components/context';

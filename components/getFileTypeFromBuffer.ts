@@ -31,6 +31,7 @@ export function getFileTypeFromBuffer(buffer: Uint8Array): string | null {
             case '504B34':
                 return 'application/xlsx'
             case '00018':
+            case '00020':
                 return 'video/mp4'
             case '49492A00':
                 return 'image/tiff'
