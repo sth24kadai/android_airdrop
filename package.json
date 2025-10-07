@@ -39,6 +39,7 @@
     "react-native-vector-icons": "^10.1.0",
     "react-native-video": "^6.8.2",
     "react-native-vision-camera": "^4.6.3",
+    "react-native-worklets-core": "^1.6.2",
     "react-native-zeroconf": "^0.13.8"
   },
   "devDependencies": {
