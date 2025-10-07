@@ -13,7 +13,7 @@ import {
 import { NativeStackScreenProps } from 'react-native-screens/lib/typescript/native-stack/types'
 import { RootStackParamList } from '../types'
 import { Context } from '../components/context'
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { Notifier } from 'react-native-notifier'
 import { Icon } from 'react-native-elements'
 

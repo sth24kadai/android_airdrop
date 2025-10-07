@@ -7,7 +7,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Button, Image, ImageRequireSource, ImageStyle, ImageURISource, StyleProp } from 'react-native'
 import { View } from 'react-native'
-import Video, { VideoRef } from 'react-native-video'
+import { VideoRef } from 'react-native-video'
 
 
 export const AutoHeightImage: React.FC<{
@@ -35,18 +35,6 @@ export const AutoHeightImage: React.FC<{
             )
         }
     }, [source, width])
-
-    /*
-    if( typeof source !== "number" && ( source.uri && source.uri.includes('mp4') ) ){
-        return (
-            <Video 
-                ref={videoRef}
-                source={{ uri: source.uri }} 
-                style={[{ height, width }, style]} 
-            />
-        )
-    }
-        */
 
     return (
         <>

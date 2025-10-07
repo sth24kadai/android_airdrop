@@ -1,15 +1,15 @@
 import { Component, ContextType } from "react";
 import { NativeStackScreenProps } from 'react-native-screens/lib/typescript/native-stack/types';
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { View, StyleSheet, GestureResponderEvent } from "react-native";
+import { View, StyleSheet, GestureResponderEvent, Text } from "react-native";
 import { ScrollView as RNScrollView } from 'react-native-gesture-handler';
 import { Button, Text as PaperText } from "react-native-paper";
-import { ImageLibraryOptions, launchImageLibrary } from "react-native-image-picker";
 
 import { RootStackParamList } from "../types";
 import { Context } from '../components/context';
 import { AutoHeightImage } from "../components/autosizedImage";
 import QRCode from "react-native-qrcode-svg";
+import { pick } from "@react-native-documents/picker";
 
 export default class SelectImageInitScreen extends Component<NativeStackScreenProps<RootStackParamList, 'SelectImageInitScreen'>> {
 
@@ -25,42 +25,39 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
     public state = {
         qrURL: null,
         isPreviewOpen: false,
+        isFile: false,
         isQROpen: false,
     }
 
-    public selectImage(e: GestureResponderEvent) {
-        const option: ImageLibraryOptions = {
-            mediaType: "photo",
-            quality: 1,
-            includeBase64: true,
-            selectionLimit: 10
+    public async selectFile( e: GestureResponderEvent ){
+        try {
+            const [ result ] = await pick({
+                mode: "open"
+            })
+
+            if( !result ) return;
+            if( !result.uri ) return;
+
+            const isImage = /jpg|jpeg|png|gif|bmp|webp|tiff|svg|image/i.test( result.uri );
+
+            const name = result.name == null ? "quickshare_file_" + Date.now() + "_data" : result.name.split('.')[0]
+
+            console.log( result.uri, isImage, name );
+
+            this.context.setObjectState({
+                image: [{
+                    uri: result.uri,
+                    isFile: !isImage,
+                    name
+                }]
+            })
+            this.setState({
+                isFile: true,
+                isPreviewOpen: true
+            })
+        } catch( e ){
+            console.error( e )
         }
-
-        launchImageLibrary(option, (responseImage) => {
-            if (responseImage.didCancel) {
-                return;
-            }
-            else if (
-                responseImage.errorMessage ||
-                responseImage.errorCode
-            ) {
-                return;
-            }
-            else {
-                if (
-                    responseImage.assets === null ||
-                    responseImage.assets?.length === 0 ||
-                    !Array.isArray(responseImage.assets)
-                ) return;
-
-                this.context.setObjectState({
-                    image: responseImage.assets.map((v) => v.uri).filter((v) => v !== null || typeof v !== "undefined") as string[]
-                })
-                this.setState({
-                    isPreviewOpen: true
-                })
-            }
-        })
     }
 
     public selectSender() {
@@ -104,14 +101,14 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                             </PaperText>
                         </View>
                         <View style={styles.flexColumn}>
-                            {
-                                !this.context.image && <Button mode="elevated" onPress={(e) => this.selectImage(e)}>
-                                    画像を選択する
-                                </Button>
-                            }           
                             <Button mode="elevated" disabled={( this.state.qrURL !== null && this.state.isQROpen) } onPress={(e) => this.props.navigation.navigate('ScanQRScreen')}>
                                 共有QRコードをスキャンする
                             </Button>
+                            {
+                                !this.context.image && <Button mode="elevated" onPress={(e) => this.selectFile(e)}>
+                                    画像を選択する
+                                </Button>
+                            }           
                             {
                                 this.context.image && (
                                     <Button mode={ this.state.isPreviewOpen ? "contained-tonal" : "outlined"} onPress={() => this.setState({ isPreviewOpen: !this.state.isPreviewOpen })}>
@@ -128,10 +125,11 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                                         ? this.context.image 
                                         : [this.context.image])].map(
                                             (uri, index) => (
+                                                uri.isFile ? <Text key={index}> File </Text> :
                                                 <AutoHeightImage 
                                                     style={styles.imageStyle} 
                                                     key={index} 
-                                                    source={{ uri: uri }} 
+                                                    source={{ uri: uri.uri}} 
                                                     width={350} 
                                                     onDeletePut={() => {
                                                         this.state.isQROpen && this.setState({ isQROpen: false })

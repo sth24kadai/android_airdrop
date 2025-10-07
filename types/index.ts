@@ -10,10 +10,10 @@ export interface InternalState {
 		message: string
 	}[],
 	showLogs: boolean,
-	image: string[] | string | null,
+	image: { uri: string, isFile : boolean, name: string }[] | { uri: string, isFile : boolean, name: string } | null
 	notification: Notification | null
 	showsDetailDisplay : boolean 
-	recivedDatas : { from : string, bytes : number, data : Buffer, uri: string, uniqueGroupIndex: string }[]
+	recivedDatas : { from : string, bytes : number, data : Buffer, uri: string, uniqueGroupIndex: string, name: string }[]
 	recivedShards : HTTPBufferRequest[]
 	sentShards: HTTPBufferRequest[]
 }
@@ -40,7 +40,8 @@ export interface HTTPBufferRequest extends HTTPImageRequest {
 	type : string,
 	index: number,
 	uniqueId: string
-	totalImageIndex: number
+	totalImageIndex: number,
+	name: string
 }
 
 export interface HTTPImageFrom {

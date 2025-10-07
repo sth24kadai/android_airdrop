@@ -2,13 +2,13 @@ import { Component } from "react";
 import { NativeStackScreenProps } from "react-native-screens/lib/typescript/native-stack/types";
 import { RootStackParamList } from "../types";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { Image, ScrollView, StyleSheet, View } from "react-native"
+import { ScrollView, StyleSheet, View } from "react-native"
 import { Context } from "../components/context";
-import { Buffer } from 'buffer';
 import { Button, Text } from "react-native-paper";
 import { AutoHeightImage } from "../components/autosizedImage";
 import RNFS from "react-native-fs";
 import { Notifier, Easing } from 'react-native-notifier';
+import { getFileTypeFromBuffer } from "../components/getFileTypeFromBuffer";
 
 
 
@@ -18,25 +18,27 @@ export default class ShowComingDatas extends Component<NativeStackScreenProps<Ro
     //@ts-ignore
     context!: React.ContextType<typeof Context>
 
-    getRecentData() : string[] {
+    getRecentData(): { uri: string, name: string }[] {
         const { recivedDatas } = this.context;
         if (recivedDatas.length === 0) {
             return [];
         }
-        return recivedDatas.map( ( data ) => data.uri );
+        return recivedDatas.map((data) => ({ uri: data.uri, name: data.name }));
     }
 
-    getBase64URI() : string[] {
-        return this.getRecentData().filter( ( uri ) => uri.startsWith('data:image/') );
+    public getFileTypeFromBuffer(buffer: Uint8Array): string | null {
+        return getFileTypeFromBuffer( buffer )
     }
 
-    saveImage( base64 : string ) {
+    saveImage(name: string, base64: string) {
         const base64URI = base64;
         if (base64URI.length === 0) {
             return;
         }
 
-        const path = RNFS.DownloadDirectoryPath + `/quickshare.${Date.now()}.${base64URI.split(';')[0].split('/')[1]}`;
+        const path = RNFS.DownloadDirectoryPath + `/quickshare_images/${name}.${base64URI.split(';')[0].split('/')[1]}`;
+        RNFS.mkdir(RNFS.DownloadDirectoryPath + "/quickshare_images").catch(() => { });
+        // 保存
         RNFS.writeFile(path, base64URI.split(',')[1], 'base64')
             .then(() => {
                 Notifier.showNotification({
@@ -64,14 +66,14 @@ export default class ShowComingDatas extends Component<NativeStackScreenProps<Ro
                     <ScrollView>
                         {
                             this.getRecentData().length > 0 ? (
-                                this.getRecentData().map((uri, index) => (
+                                this.getRecentData().map((data, index) => (
                                     <View key={index} style={styles.containText}>
-                                        { uri.startsWith('data:image/') ? (
-                                            <AutoHeightImage style={styles.imageStyle} width={350} source={{ uri: uri }} hiddenDeleteBtn />
+                                        {data.uri.startsWith('data:image/') ? (
+                                            <AutoHeightImage style={styles.imageStyle} width={350} source={{ uri: data.uri }} hiddenDeleteBtn />
                                         ) : (
-                                            <div> データファイル </div>
+                                            <Text> その他画像以外のファイル ({data.uri.split(',')[0]}) {data.name}</Text>
                                         )}
-                                        <Button mode="contained-tonal" onPress={() => this.saveImage( uri )} >
+                                        <Button mode="contained-tonal" onPress={() => this.saveImage(data.name, data.uri)} >
                                             保存する
                                         </Button>
                                     </View>
@@ -104,7 +106,7 @@ const styles = StyleSheet.create({
         alignContent: 'center',
         textAlign: 'center',
     },
-    containText : {
+    containText: {
         display: "flex",
         flexDirection: "column",
         gap: 10,
