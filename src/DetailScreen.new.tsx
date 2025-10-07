@@ -16,7 +16,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { AutoHeightImage } from '../components/autosizedImage'
 import { NetworkInfo } from 'react-native-network-info'
 import { ShardSender } from '../components/shardSender'
-import { HTTPBufferRequest, RootStackParamList } from '../types'
+import { HTTPBufferRequest } from '../types'
 import { Service } from 'react-native-zeroconf'
 
 
