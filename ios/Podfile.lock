@@ -1259,6 +1259,27 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-document-picker (10.1.7):
+    - DoubleConversion
+    - glog
+    - RCT-Folly (= 2024.10.14.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - react-native-http-bridge-refurbished (1.2.9):
     - GCDWebServer
     - React
@@ -1930,6 +1951,7 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
+  - "react-native-document-picker (from `../node_modules/@react-native-documents/picker`)"
   - react-native-http-bridge-refurbished (from `../node_modules/react-native-http-bridge-refurbished`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-network-info (from `../node_modules/react-native-network-info`)
@@ -2050,6 +2072,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
+  react-native-document-picker:
+    :path: "../node_modules/@react-native-documents/picker"
   react-native-http-bridge-refurbished:
     :path: "../node_modules/react-native-http-bridge-refurbished"
   react-native-image-picker:
@@ -2174,6 +2198,7 @@ SPEC CHECKSUMS:
   React-logger: dbca7bdfd4aa5ef69431362bde6b36d49403cb20
   React-Mapbuffer: 6efad4a606c1fae7e4a93385ee096681ef0300dc
   React-microtasksnativemodule: 252ac3840dc5e527cf5baf5067ce281846538eda
+  react-native-document-picker: f1ea6a1702b49d1179737d1bbd9f3750e7b32785
   react-native-http-bridge-refurbished: e2e45508ec1573999ace69a0b880eee8f0e5bab2
   react-native-image-picker: 58c60dd9712cb138c3c6a7e930a84eac48d7d986
   react-native-network-info: d1290ffc0bd0709e11436f5b8d7f605dcc5c4530
@@ -2219,6 +2244,6 @@ SPEC CHECKSUMS:
   VisionCamera: 88df4dae7196c93ecd331f105f0e5d7d95702cb3
   Yoga: feb4910aba9742cfedc059e2b2902e22ffe9954a
 
-PODFILE CHECKSUM: 23b6f596502fb88c09042420dee6c1afd33116f2
+PODFILE CHECKSUM: f58ee91c37c0eac1e679e109d8228c798e421813
 
 COCOAPODS: 1.15.2
