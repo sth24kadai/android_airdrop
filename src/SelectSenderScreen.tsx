@@ -7,10 +7,7 @@ import { Icon, ListItem, Text } from "react-native-elements";
 import React from "react"
 import { FlatList, RefreshControl } from "react-native-gesture-handler";
 import { ActivityIndicator } from "react-native-paper";
-import Zeroconf from "react-native-zeroconf";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-
-const zeroconf = new Zeroconf();
 
 export default class SelectSenderScreen extends Component<
     NativeStackScreenProps< RootStackParamList, 'SelectSenderScreen' >
@@ -25,7 +22,6 @@ export default class SelectSenderScreen extends Component<
      */
     // @ts-ignore
     context !: ContextType<typeof Context>
-    private timeout: NodeJS.Timeout | null = null;
 
 
     
@@ -34,6 +30,7 @@ export default class SelectSenderScreen extends Component<
 
         return (
             <TouchableOpacity
+                key={index}
                 onPress={() => {
                     this.context.setObjectState({
                         selectedService: host

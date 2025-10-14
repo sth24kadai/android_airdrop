@@ -18,6 +18,7 @@ import { NetworkInfo } from 'react-native-network-info'
 import { ShardSender } from '../components/shardSender'
 import { HTTPBufferRequest } from '../types'
 import { Service } from 'react-native-zeroconf'
+import { Icon } from 'react-native-elements'
 
 
 export default class DetailScreen extends ShardSender<'DetailScreen'> {
@@ -126,8 +127,11 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
                                 ].map(
                                     (uri, index) => (
                                         uri.isFile ? (
-                                            <Text> File </Text>
-                                        ) : 
+                                                    <Text key={index} style={styles.filePreview}>
+                                                        <Icon name="description" size={35} /> 
+                                                        {uri.name}
+                                                    </Text>
+                                                ) : 
                                         <AutoHeightImage 
                                             style={styles.imageStyle} 
                                             key={index} 
@@ -155,6 +159,18 @@ export default class DetailScreen extends ShardSender<'DetailScreen'> {
 }
 
 const styles = StyleSheet.create({
+    filePreview: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        borderRadius: 10,
+        gap: 10,
+        backgroundColor: '#f9f9f9'
+    },
     statusComponent : {
         flexDirection : "row",
         justifyContent : "space-between",

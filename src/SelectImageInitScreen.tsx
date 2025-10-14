@@ -10,6 +10,7 @@ import { Context } from '../components/context';
 import { AutoHeightImage } from "../components/autosizedImage";
 import QRCode from "react-native-qrcode-svg";
 import { pick } from "@react-native-documents/picker";
+import { Icon } from "react-native-elements";
 
 export default class SelectImageInitScreen extends Component<NativeStackScreenProps<RootStackParamList, 'SelectImageInitScreen'>> {
 
@@ -91,6 +92,15 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
     }
 
     render() {
+
+        const DeleteProp = ( ) => (
+            <Button icon="close" mode="text" onPress={() => {
+                this.state.isQROpen && this.setState({ isQROpen: false })
+                this.state.qrURL && this.setState({ qrURL: null })
+                this.context.setObjectState({ image : null })
+            }}> </Button>
+        )
+
         return (
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container}>
@@ -125,7 +135,13 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
                                         ? this.context.image 
                                         : [this.context.image])].map(
                                             (uri, index) => (
-                                                uri.isFile ? <Text key={index}> File </Text> :
+                                                uri.isFile ? (
+                                                    <Text key={index} style={styles.filePreview}>
+                                                        <Icon name="description" size={35} /> 
+                                                        {uri.name}
+                                                        <DeleteProp />
+                                                    </Text>
+                                                ):
                                                 <AutoHeightImage 
                                                     style={styles.imageStyle} 
                                                     key={index} 
@@ -174,6 +190,18 @@ export default class SelectImageInitScreen extends Component<NativeStackScreenPr
 }
 
 const styles = StyleSheet.create({
+    filePreview: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        borderRadius: 10,
+        gap: 10,
+        backgroundColor: '#f9f9f9'
+    },
     imageStyle: {
         borderRadius: 13,
         borderStyle: "solid",

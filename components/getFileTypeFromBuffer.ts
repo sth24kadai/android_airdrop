@@ -9,8 +9,6 @@ export function getFileTypeFromBuffer(buffer: Uint8Array): string | null {
             signatureArr[i] = (new Uint8Array(buffer))[i].toString(16)
         const signature = signatureArr.join('').toUpperCase()
 
-        console.log(`Detected file type: ${signature}`)
-
         if( /FFD8/.test(signature) ){
             return 'image/jpeg'
         }
