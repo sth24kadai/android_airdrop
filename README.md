@@ -1,113 +1,238 @@
-# The AirDrop Project
-いい感じのファイル転送アプリを作るやつ
+# 異なるOS間における近距離通信及び識別方法
 
-# Getting Started!
+## ライセンスについて
+このアプリケーションでは様々なOSSパッケージを用いています。各パッケージのライセンスについてはそのパッケージについてみてください。
 
-## 1. 共通でやること
+このアプリケーションのソースコードにはMITライセンスが付与されています。難しいことはLICENCEファイルにて。
 
+## 動かし方（動くかな？）
+
+大体の動かし方です。エラー等が出たら別紙の引継ぎ資料を見るといいと思います。
+
+### Androidなら
+
+1. Gradleを入れます。たぶん私は8.7を使いました。
+2. AndroidStudioも入れます。
+3. Javaも入れます。
+4. だいたい入ったら`npm i --save`をしてパッケージをインストールします。
+5. `success!`がでたら`npm run android`を実行してみてください。
+
+何事もなければ動きます。
+
+### iOSなら
+
+> [!TIP]
+> iOSアプリケーションをビルドする際は**Mac**とかのアップル製PCが必要です。
+
+1. Podをいれます。
+2. XCodeもいれます。
+3. XCodeとこのプロジェクトを紐づけします。
+> [!IMPORTANT]
+> 紐づけをしないとそもそもビルドができません。
+4. `npm i --save`をしてパッケージをインストールします。
+5. `success!`がでたら`npm run ios`を実行してみてください。
+
+## 基本的なファイル構造について
+
+私が後から付け足したりいろいろした結果悲惨な感じになっていますが、本業ではないのであしからず。
+
+- エントリーポイント : `index.js` （基本的にはいじらなくてもいい）
+- アプリの処理とか：`src`
+- どこでも使うから汎用化したもの：`components`
+- 型ファイル：`types`
+
+### src
+使ってるものと使ってないものがあります。消せって話ですよね。すいません。
+
+#### 使ってる
+- DetailScreen.new.tsx
+- logScreen.tsx
+- QRCodeScannedScreen.tsx
+- ScanQRScreen.tsx
+- SelectImageInitScreen.tsx
+- SelectSenderScreen.tsx
+- ShowComingDatas.tsx
+
+#### つかってない（とくにかんけいない）
+- HomeScreen.new.tsx
+- index.ts (インポートの関係で置いてあるだけ)
+
+#### 呼ばれ方（使われ方）
+各ファイルの呼ばれ方・関係はこのようになっています。
+
+ユーザーが操作したり、スキャンしたりするとこのように転移するといった形ですね。
+
+`SelectImageInitScreen.tsx` 
+
+-> `SelectSenderScreen.tsx`
+
+-> `ScanQRScreen.tsx`
+
+-> `ShowComingDatas.tsx`
+
+-> `logScreen.tsx`
+
+`SelectSenderScreen.tsx` -> `DetailScreen.new.tsx`
+
+`ScanQRScreen.tsx` -> `QRCodeScannedScreen.tsx`
+
+### components
+
+汎用的な要素、クラスなど。
+
+#### autosizedImage.tsx
+
+[この記事の物を](https://zenn.dev/toshiyuki/articles/4791ccada2ba7e)参考にしました。ありがとうございます。
+
+#### calcuateEstimate.ts
+
+予想時間を計算するやつ。
+
+#### context.tsx
+
+> [!TIP]
+> ここでの状態とはstateの事です。
+> useState()とかのアレよアレ
+
+コンテキスト。このアプリ全体の**状態**を管理するのがContextです。
+
+普通の**状態**はページを跨いだりすると無くなってしまうのですが、Contextはページをまたいだりしても**状態**を保存してくれます。
+
+いい子だね。
+
+#### getFileTypeFromBuffer.ts
+
+バッファの先端16bitからファイル種別を抜き取るやつ
+
+#### index.ts
+
+インポートのために必要な奴
+
+#### shardSender.ts
+
+シャードセンダー。その名の通り、ファイルを分割して送るために必要なファイル。
+
+この通信を実装するべきところでは、このファイルを**継承**するだけで分割送信ができるようになります。
+
+あ、もちろん送るファイルの設定とか送る関数の実行とかはしなくちゃいけませんよ？
+
+ただ送る関数の実装は**継承**がすべてやってくれるとそういうことです。
+
+### types
+
+型ファイル
+
+#### index.ts
+
+インポートの！！エントリーポイント！
+
+#### rootParamList.ts
+
+このアプリの画面一覧みたいな、そういうイメージ
+
+### App.tsx
+
+このアプリのマジで中心というか、ベースのベース。
+
+ここでHTTPサーバーとかmDNSサーバーが動いてるし、このクラス自体も`ShardSender`を継承していたりと、何とも自由。
+
+## 通信プロトコル（？）について
+
+複雑に見えて割と単純な送信プロトコルですよ。ついてきてくださいね。
+
+### さぁ相手に送りましょう
+
+相手に送る際は、相手の端末にこのようなJSONデータを送ります。
+
+> [!WARNING]
+> headerのContent-Typeは必ず"application/json"を指定してください。痛い目にあいます。
+> （iOSのHTTPサーバー君がこのデータを空データだと誤認する）
+
+`POST /stream`
+```ts
+{
+    "from": "base64base64base64"
+    "status" : "SHARD_POSTING"
+    "uri": "binarybinarybinarybinarybinarybinary"
+    "totalShards": integer
+    "shardIndex": integer
+    "imgType": "MINE_TYPE"
+    "totalImageIndex": integer
+    "uniqueId": "UNIQUESENDIDIDIDID"
+    "index": integer
+    "name" : "FILE_NAME"
+}
 ```
-npm install
+
+#### from
+誰から送られたものなのかが入ったJSONデータです。`base64`形式にエンコードされているため、使用する際はデコードして`JSON.parse`にでも突っ込んでください。
+
+```json
+{
+    "id" : "DeviceId",
+    "name": "DeviceName",
+    "model": "PlatformOS"
+}
 ```
 
-依存パッケージのインストールを行ってください。
+こんな感じのデータになれば成功してます。
 
-## 1-1. 更新を適応するときは？
+#### status 
+"SHARD_POSTING" 固定です。シャード送ってるよっていう指標ですね。
 
-```
-git pull origin main
-```
+#### uri
+シャードのデータです。0と1のバイナリに変換されてます。
 
-これで更新が取り込まれます。毎回`git clone`をする必要は実はないんですよ。
+#### totalShards
+このシャードが合計で何個あるのかを相手に教えます。
 
-## 2.Android
+### shardIndex
+このシャードは何番目のシャードであるかのデータです。
 
-```
-npm install --save
-```
-をしたのなら終わり！
+これをもとに並び替えることで、写真として復元できます。
 
-## 2-1. iOS ( Macbook )
+### imgType
+Content-Typeです。MineTypeが入っています。
 
-```
-npm install
-```
-をしたら、
-```
-cd /ios/
-pod install
-```
-をしてください。これをしなければ**絶対にビルドに失敗します**
+拡張子復元のためですね。
 
-# 3.パッケージの更新があった場合の更新方法
+### totalImageIndex
+全部で送った写真・データ自体は何枚なのかを表します。
 
-```bash
-git pull #もちろんこれはやりましたよね。
-npm install --save # もっかい確認。
-```
+### uniqueId
+この送信セッション自体のユニークなIDです。
 
-# 4.更新の方法 (むずかしめ)
+### index
+シャード自体のindexです。これで並び替えてもデータは復元できないので注意。
 
-更新は極めて簡単(当社比)ですが、いくつかルールを設けたいと思っています。
+### name
+この写真・データの名前。
 
-まずブランチを作ります。更新の際はそれを忘れないようにしましょう。
+### 相手からQR経由で写真をもらうとき
 
-```
-git checkout update-[name]
-```
+QR経由の時は、こんなかんじ
 
-これは現在のbranchを設定する魔法のコマンドです。
+1. 相手が生きているかを確かめる
 
-ここから更新を開始しましょう。
+`POST /info`
 
-もし作業を終えたら、次のコマンドを実行してください：
+還ってきたらおK
 
-```
-git add .  #変更を取り込む。 
+2. 相手に要求する
+
+相手に写真を要求しましょう。以下のJSONデータも一緒に。
+
+`PUT /stream`
+```json
+{
+    "ip": "YOUR PHONE IP"
+}
 ```
 
-- 注意
-このとき `.gitignore` で `node_modules` が除外されていることを確認してください。
+このあなたが送ったIPをもとに相手は写真を送ってくれます。
 
-```bash
-git commit -m "ここにはコミットめっせーじが入ります。"
-```
+送る際はさっきと同じ方法でシャード化して送ってくれます。優しい。
 
-コミットメッセージは、多人数開発が基本となった形をとります。
+## その他不明な点があったら・・・
 
-まず、自分がこのコミットで何を行ったかを最初のカッコに入れます。
-
-- バグの修正 `fix`
-- 新機能 `feat` / `update`
-- コミットの取り消し `revert`
-- ファイルの削除 `del`
-...etc
-
-など、とりあえず自分が何をしたかを最初に入れます。
-
-あとは、基本的には英語のほうが望ましいですがコミットの詳細な説明を入れます。
-
-もし、あなたが何か重大なバグを修正した際には
-
-```bash
-... -m "[fix] fixed impotant bug"
-```
-
-などの簡単でいい英語で更新の内容を伝えましょう。文法が間違っていても、きっと伝わります。
-
-最後に、あなたのcommitをpushしましょう。
-
-```bash
-git push origin [さっきのbranch名]
-```
-
-そしたら次に、githubのPRを立てます。
-
-PRというのは、自分の変更を競合なしにメインブランチに取り込む方法です。
-
-`Pull Requests > New Request` であたらしいPRを立ててください。
-
-そしたらレビュアーを`akikaki-bot`にして、私のレビューを待ってください。私が精査します。
-
-もし通らなかったら何かが悪いので、私のコメントを見てください。
-
-これで完璧です👍！PRが通るとあなたのブランチは勝手に消されるので新しい作業を始める際はまた新しいブランチを立ててくださいね！
+AIに聞いてみる？
